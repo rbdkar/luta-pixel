@@ -162,7 +162,7 @@ Game.Menu = class Menu {
   /** Prévia dos sprites em escala inteira de pixels físicos (nítida), cabendo na coluna. */
   sizeCards() {
     const dpr = window.devicePixelRatio || 1;
-    const cols = 6; // 12 lutadores: duas fileiras de 6
+    const cols = 7; // 13 lutadores: duas fileiras de 7
     const boxW = Math.min(window.innerWidth * 0.96, 1060) - 40;
     const colW = boxW / cols - 16;
     const portrait = window.innerWidth < window.innerHeight;

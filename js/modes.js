@@ -134,6 +134,8 @@ Game.TRIAL_SIGNATURE = {
   ampulheta: { text: 'Prenda o boneco na Bolha do Tempo', keys: (k) => k.s, on: 'timeBubble' },
   hood: { text: 'Bola de energia carregada', keys: (k) => 'segure ' + k.s, on: 'fireBig' },
   welder: { text: 'Feche o portão de ferro', keys: (k) => '↓ + ' + k.s, on: 'gateSlam' },
+  ademoir: { text: 'Raiz de Corte: acerte as duas curvas no boneco', keys: (k) => k.s, on: 'rootWhip', target: true },
+  dama: { text: 'Captura: o peão marcha e salta no boneco', keys: (k) => k.s, on: 'pawnCapture', target: true },
 };
 
 // supers que pedem algo a mais do jogador (o texto da missão explica)

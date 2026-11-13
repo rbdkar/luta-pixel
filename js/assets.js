@@ -20,6 +20,11 @@ Game.assets = {
     orbita: 'assets/sprites/orbita.png',
     marionete: 'assets/sprites/marionete.png',
     pavio: 'assets/sprites/pavio.png',
+    ademoir: 'assets/sprites/ademoir.png',
+    ademoirArmor1: 'assets/sprites/ademoir_armor1.png',
+    ademoirArmor2: 'assets/sprites/ademoir_armor2.png',
+    ademoirArmor3: 'assets/sprites/ademoir_armor3.png',
+    dama: 'assets/sprites/dama.png',
     // Tiles 16×16
     grassA: 'assets/tiles/grass_a.png',
     grassB: 'assets/tiles/grass_b.png',
@@ -68,6 +73,10 @@ Game.assets = {
     domOrbitaFar: 'assets/domains/orbita_far.png', domOrbitaMid: 'assets/domains/orbita_mid.png', domOrbitaFloor: 'assets/domains/orbita_floor.png',
     domMarioneteFar: 'assets/domains/marionete_far.png', domMarioneteMid: 'assets/domains/marionete_mid.png', domMarioneteFloor: 'assets/domains/marionete_floor.png',
     domPavioFar: 'assets/domains/pavio_far.png', domPavioMid: 'assets/domains/pavio_mid.png', domPavioFloor: 'assets/domains/pavio_floor.png',
+    domAdemoirFar: 'assets/domains/ademoir_far.png', domAdemoirFloor: 'assets/domains/ademoir_floor.png',
+    domAdemoirMid1: 'assets/domains/ademoir_mid1.png', domAdemoirMid2: 'assets/domains/ademoir_mid2.png',
+    domAdemoirMid3: 'assets/domains/ademoir_mid3.png',
+    domDamaFar: 'assets/domains/dama_far.png', domDamaMid: 'assets/domains/dama_mid.png', domDamaFloor: 'assets/domains/dama_floor.png',
   },
 
   _cache: {},

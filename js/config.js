@@ -136,6 +136,72 @@ Game.config = {
     speed: 150, life: 4, radius: 30,
     hit: { damage: 24, knockback: 180, heavy: true, super: true, launch: true, breakPower: 3 },
   },
+  // Ademoir: Raiz de Corte (K) corre por baixo da terra até o adversário e faz duas curvas:
+  // a 1ª sobe por baixo (defende agachado) e a 2ª desce de cima (defende em pé), mais forte
+  root: {
+    speed: 190, range: 170, cooldown: 1.3,
+    curveGap: 0.2, // tempo entre as curvas
+    hit1: { damage: 3, knockback: 24, special: true, low: true, stun: 0.34, stop: 'light' },
+    hit2: { damage: 7, knockback: 150, heavy: true, special: true, high: true, launch: true },
+    hit3: { damage: 5, knockback: 120, heavy: true, special: true, launch: true }, // 3ª curva (só no domínio)
+  },
+  // Armadura de Carvalho Sagrado (↓ + K): aguenta golpes sem recuar e leva metade do dano
+  // Armadura de Carvalho Sagrado: o cajado vira uma armadura no corpo todo (forma maior, sem o cajado)
+  armor: {
+    time: 8,          // segundos na forma (dentro da Nova Floresta ela não acaba pelo tempo)
+    toughness: 30,    // quanto dano a casca aguenta antes de quebrar
+    defense: 0.75,    // dano recebido na forma (25% a menos)
+    power: 1.2,       // dano dos golpes na forma (20% a mais)
+    cooldown: 7,      // espera para vestir de novo depois que ela sai
+    forestRegen: 3,   // na Nova Floresta a casca se refaz (pontos por segundo)
+  },
+  // Fúria do Carvalho (super): investida com o cajado; acertando, três golpes e o carvalho brota
+  oak: {
+    dashSpeed: 290, dashTime: 0.3,
+    hits: [
+      { damage: 3, knockback: 30, super: true, stop: 'multi' },
+      { damage: 4, knockback: 30, super: true, stop: 'multi' },
+      { damage: 5, knockback: 30, super: true, stop: 'multi' },
+    ],
+    root: { damage: 12, knockback: 160, heavy: true, super: true, launch: true, breakPower: 3 },
+  },
+  // Dama: Peão em Marcha (K) anda casa a casa; captura na diagonal quem estiver na casa da frente
+  // e, se chegar ao fim do caminho (ou na parede), é promovido a dama, que avança no adversário
+  pawn: {
+    square: 16,        // tamanho da casa (px)
+    rise: 0.16,        // o peão brota do chão
+    stepTime: 0.44,    // espera entre um passo e outro
+    firstLook: 0.05,   // depois de brotar, espera só isso para o primeiro passo (ou a captura)
+    hopTime: 0.14,     // duração do pulinho de uma casa
+    promoteAt: 6,      // casas andadas até a promoção
+    cooldown: 1.0,
+    capture: { damage: 10, knockback: 110, heavy: true, special: true, launch: true },
+    queenWarn: 0.4,    // a dama brilha antes de avançar
+    queenSpeed: 330, queenRange: 300,
+    queen: { damage: 12, knockback: 180, heavy: true, special: true, launch: true, breakPower: 2 },
+  },
+  // Salto do Cavalo (↓ + K): sobe duas casas, atravessa por cima e desce pisando na casa marcada
+  // atrás do adversário (segurando para trás, salta três casas para trás e foge). No ar não leva
+  // golpe (o cavalo pula por cima das peças); o pisão é que pode ser defendido, em pé e do lado certo
+  knight: {
+    crouch: 0.08, height: 40, riseSpeed: 430, crossSpeed: 320, dropSpeed: 540,
+    range: 124,        // até onde ela alcança o adversário para pousar atrás dele
+    behind: 17,        // quantos px atrás do adversário fica a casa
+    back: 52,          // segurando para trás: casas para trás
+    cooldown: 1.8, domainCooldown: 0.3,
+    stomp: { damage: 10, knockback: 140, heavy: true, special: true, high: true, launch: true },
+    whiff: 0.08,       // tempo vulnerável a mais quando o pisão não acerta ninguém
+  },
+  // XEQUE-MATE (super): a fileira de casas corre pelo chão; acertando ("xeque"), torre, bispo e
+  // cavalo caem no adversário e a dama gigante fecha o mate
+  checkmate: {
+    lineSpeed: 430, lineRange: 230,
+    check: { damage: 3, knockback: 0, super: true, stop: 'multi' },
+    pieces: { damage: 4, knockback: 0, super: true, stop: 'multi' },
+    mate: { damage: 11, knockback: 190, heavy: true, super: true, launch: true, breakPower: 3 },
+  },
+  // Tabuleiro Infinito (domínio da Dama): ficar parado é Zugzwang (obrigado a se mexer, ou apanha)
+  zugzwang: { still: 1.2, every: 1.0, hit: { damage: 3, knockback: 50, special: true, unblockable: true, echo: true, stop: 'multi' } },
 
   cpu: {
     easy:   { think: 0.34, block: 0.22, aggro: 0.35, antiAir: 0.15, special: 0.12, react: 0.32, combo: 0.35 },

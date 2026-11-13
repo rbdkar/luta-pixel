@@ -311,6 +311,10 @@ Game.Scene = class Scene {
     const meter = Game.config.fight.meter;
     const owner = attacker.owner || attacker; // projétil/raio: a barra vai para quem lançou
     if (this.domain) hit = this.domain.modifyHit(hit, owner); // dentro do domínio os golpes mudam
+    // Armadura de Carvalho Sagrado: na forma de armadura os golpes saem mais fortes
+    if (owner.armor && hit.damage > 0 && !hit.echo && !hit.sure && !hit.timeDebt) {
+      hit = Object.assign({}, hit, { damage: Math.max(1, Math.round(hit.damage * Game.config.armor.power)) });
+    }
     const ts = this.map.tileSize;
     const dir = attacker.facing;
     const midY = rect.y + rect.h / 2;

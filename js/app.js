@@ -127,7 +127,13 @@ Game.App = class App {
       bombThrow: 'bombThrow', bombBounce: 'bombBounce', boom: 'boom', boomSmall: 'boomSmall', boomBig: 'boomBig',
       fuseTick: 'fuseTick', timebombPlant: 'timebombPlant', timebombPass: 'timebombPass', fuseLight: 'fuseLight',
       barrelRoll: 'barrelRoll', boomFar: 'boomFar', chaosRule: 'chaosRule', trialDone: 'trialDone', trialsAll: 'perfect',
+      rootCast: 'rootCast', rootBurst: 'rootBurst', rootCurve: 'rootWhip', armorUp: 'armorUp', armorHit: 'armorHit',
+      armorBreak: 'armorBreak', armorFade: 'armorFade', oakPlant: 'oakPlant', forestGrow: 'forestGrow',
+      pawnPlace: 'pawnPlace', pawnStep: 'pawnStep', pawnLeap: 'pawnLeap', pawnBreak: 'pawnBreak', pawnPromote: 'pawnPromote',
+      queenRush: 'queenRush', knightJump: 'knightJump', knightLand: 'knightLand', checkLine: 'checkLine', check: 'check',
+      matePiece: 'matePiece', checkmate: 'checkmate', zugzwang: 'zugzwang',
     };
+    Game.events.on('toss', (d) => { if (d.castle) Game.Sound.play('castle'); });
     for (const [event, sound] of Object.entries(map)) Game.events.on(event, () => Game.Sound.play(sound));
     Game.events.on('hit', (d) => Game.Sound.play(d.heavy ? 'heavy' : 'hit'));
     Game.events.on('strike', (d) => Game.Sound.play(d.sound));
@@ -670,15 +676,19 @@ Game.App = class App {
       const free = this.screen === 'free';
       const dom = Game.DOMAINS[f.charKey];
       const moves = [
-        ['Combo: soco, soco, chute', k.p + ' ' + k.p + ' ' + k.p],
+        [ch.comboName || 'Combo: soco, soco, chute', k.p + ' ' + k.p + ' ' + k.p],
         [ch.airAttackName || (ch.airAttack === 'airKick' ? 'Chute aéreo' : 'Soco aéreo'), k.p + ' no ar'],
         [ch.specialName + (ch.special === 'energyBall' ? ' (segure para carregar)' : ch.special === 'teleport' ? ' (com ' + k.bk + ': para trás)'
-          : ch.special === 'thread' ? ' (preso: ' + k.s + ' de novo puxa)' : ch.special === 'bomb' ? ' (mira sozinha · ' + k.bk + ' perto · ' + k.fw + ' longe)' : ''),
+          : ch.special === 'thread' ? ' (preso: ' + k.s + ' de novo puxa)' : ch.special === 'bomb' ? ' (mira sozinha · ' + k.bk + ' perto · ' + k.fw + ' longe)'
+          : ch.special === 'root' ? ' (1ª curva por baixo, 2ª por cima)'
+          : ch.special === 'pawn' ? ' (captura na diagonal; no fim vira dama · um golpe quebra)' : ''),
           free ? k.s : k.s + '  ou  ↓ ↘ → + ' + k.p],
       ];
       if (!free) moves.push(['Rasteira (só se defende agachado)', '↓ + ' + k.p]);
       if (ch.special2 && !free) {
-        const note = ch.special2 === 'tangle' ? ' (de perto, ou pelo fio)' : ch.special2 === 'timebomb' ? ' (acerte o outro para passar)' : '';
+        const note = ch.special2 === 'tangle' ? ' (de perto, ou pelo fio)' : ch.special2 === 'timebomb' ? ' (acerte o outro para passar)'
+          : ch.special2 === 'armor' ? ' (o cajado vira armadura: maior, bate mais e toma menos dano)'
+          : ch.special2 === 'knight' ? ' (pousa atrás do adversário e pisa: defende em pé · com ' + k.bk + ': foge)' : '';
         moves.push([ch.special2Name + note, '↓ + ' + k.s + '  ou  ↓ ↙ ← + ' + k.p]);
       }
       if (ch.float && !free) moves.push(['Planar (cai devagar no ar)', 'segure ' + (touch ? 'PULO' : k.up || '↑') + ' no ar']);
@@ -687,7 +697,8 @@ Game.App = class App {
           ['Super: ' + ch.superName.toLowerCase() + ' (meia barra)', k.x],
           ['Domínio: ' + dom.name.toLowerCase() + ' (barra cheia)', k.d],
           ['No domínio', dom.perk],
-          ['Agarrão (frente / trás)', k.fw + ' + ' + k.p + '  /  ' + k.bk + ' + ' + k.p + ' colado'],
+          ch.castle ? ['Roque (agarrão: troca de lugar e a torre cai)', k.fw + ' ou ' + k.bk + ' + ' + k.p + ' colado']
+            : ['Agarrão (frente / trás)', k.fw + ' + ' + k.p + '  /  ' + k.bk + ' + ' + k.p + ' colado'],
           ['Escapar do agarrão · embate', k.p + ' na hora · ' + k.p + ' sem parar'],
         );
       }

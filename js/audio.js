@@ -624,3 +624,112 @@ Object.assign(Game.Sound.RECIPES, {
     s.tone({ type: 'square', from: 1568, dur: 0.14, vol: 0.045, delay: 0.14 });
   },
 });
+
+// Ademoir: cajado no chão, raízes rasgando a terra, casca de carvalho e a floresta crescendo
+Object.assign(Game.Sound.RECIPES, {
+  rootCast: (s) => {
+    s.tone({ type: 'triangle', from: 160, to: 90, dur: 0.12, vol: 0.09 });
+    s.noise({ filter: 'lowpass', from: 900, to: 300, dur: 0.18, vol: 0.07 });
+  },
+  rootBurst: (s) => {
+    s.noise({ filter: 'lowpass', from: 1400, to: 200, dur: 0.22, vol: 0.12 });
+    s.tone({ type: 'sawtooth', from: 110, to: 70, dur: 0.16, vol: 0.05 });
+  },
+  rootWhip: (s) => {
+    // chicotada da madeira: estalo seco e um rangido
+    s.noise({ filter: 'bandpass', from: 2600, to: 900, q: 3, dur: 0.08, vol: 0.09 });
+    s.tone({ type: 'sawtooth', from: 240, to: 180, dur: 0.1, vol: 0.04, delay: 0.02 });
+  },
+  armorUp: (s) => {
+    // a casca rangendo e crescendo pelo corpo
+    [180, 220, 270, 330].forEach((f, i) => s.tone({ type: 'sawtooth', from: f, to: f * 0.92, dur: 0.07, vol: 0.035, delay: i * 0.05 }));
+    s.noise({ filter: 'bandpass', from: 600, to: 1600, q: 2, dur: 0.24, vol: 0.05 });
+  },
+  armorHit: (s) => {
+    // pancada em madeira (oco)
+    s.tone({ type: 'triangle', from: 320, to: 260, dur: 0.07, vol: 0.12 });
+    s.noise({ filter: 'bandpass', from: 1200, to: 800, q: 4, dur: 0.05, vol: 0.06 });
+  },
+  armorBreak: (s) => {
+    s.noise({ filter: 'bandpass', from: 2400, to: 500, q: 2, dur: 0.3, vol: 0.12 });
+    s.tone({ type: 'triangle', from: 260, to: 120, dur: 0.2, vol: 0.08 });
+  },
+  armorFade: (s) => s.noise({ filter: 'bandpass', from: 1200, to: 500, q: 2, dur: 0.2, vol: 0.04 }),
+  oakPlant: (s) => {
+    s.tone({ type: 'sine', from: 90, to: 45, dur: 0.35, vol: 0.14 });
+    s.noise({ filter: 'lowpass', from: 1600, to: 150, dur: 0.4, vol: 0.12 });
+  },
+  oakRoot: (s) => {
+    s.noise({ filter: 'lowpass', from: 2000, to: 160, dur: 0.32, vol: 0.14 });
+    s.tone({ type: 'sawtooth', from: 130, to: 60, dur: 0.24, vol: 0.06 });
+  },
+  thorn: (s) => s.noise({ filter: 'bandpass', from: 2200, to: 1200, q: 3, dur: 0.06, vol: 0.05 }),
+  forestGrow: (s) => {
+    // folhas farfalhando e um acorde de flauta subindo
+    s.noise({ filter: 'highpass', from: 3500, to: 6000, dur: 0.5, vol: 0.04 });
+    [392, 494, 587, 784].forEach((f, i) => s.tone({ type: 'triangle', from: f, dur: 0.16, vol: 0.035, delay: 0.05 + i * 0.07 }));
+  },
+});
+
+// Dama: peças de madeira batendo no tabuleiro, o salto do cavalo, a promoção e o mate
+Object.assign(Game.Sound.RECIPES, {
+  pawnPlace: (s) => {
+    // peça pousando firme no tabuleiro (toc de madeira)
+    s.tone({ type: 'triangle', from: 520, to: 380, dur: 0.06, vol: 0.12 });
+    s.noise({ filter: 'bandpass', from: 1800, to: 1200, q: 5, dur: 0.04, vol: 0.06 });
+  },
+  pawnStep: (s) => s.tone({ type: 'triangle', from: 640, to: 560, dur: 0.035, vol: 0.05 }),
+  pawnLeap: (s) => {
+    s.tone({ type: 'triangle', from: 500, to: 900, dur: 0.08, vol: 0.06 });
+    s.tone({ type: 'triangle', from: 700, to: 420, dur: 0.05, vol: 0.08, delay: 0.09 });
+  },
+  pawnBreak: (s) => s.noise({ filter: 'bandpass', from: 2400, to: 900, q: 3, dur: 0.12, vol: 0.07 }),
+  pawnPromote: (s) => {
+    // fanfarra curta subindo
+    [523, 659, 784, 1047].forEach((f, i) => s.tone({ type: 'square', from: f, dur: 0.07, vol: 0.04, delay: i * 0.06 }));
+    s.noise({ filter: 'highpass', from: 4000, to: 7000, dur: 0.25, vol: 0.03, delay: 0.1 });
+  },
+  queenRush: (s) => {
+    s.noise({ filter: 'bandpass', from: 600, to: 1800, q: 2, dur: 0.3, vol: 0.07 });
+    s.tone({ type: 'sawtooth', from: 220, to: 330, dur: 0.25, vol: 0.04 });
+  },
+  knightJump: (s) => {
+    // o cavalo: dois toques de casco subindo
+    s.tone({ type: 'triangle', from: 420, to: 700, dur: 0.07, vol: 0.07 });
+    s.tone({ type: 'triangle', from: 560, to: 900, dur: 0.07, vol: 0.06, delay: 0.08 });
+  },
+  knightLand: (s) => {
+    s.tone({ type: 'sine', from: 140, to: 70, dur: 0.16, vol: 0.13 });
+    s.tone({ type: 'triangle', from: 480, to: 300, dur: 0.06, vol: 0.09 });
+  },
+  checkLine: (s) => {
+    // a fileira de casas acendendo uma a uma
+    [392, 440, 494, 523, 587, 659].forEach((f, i) => s.tone({ type: 'square', from: f, dur: 0.035, vol: 0.03, delay: i * 0.035 }));
+  },
+  check: (s) => {
+    s.tone({ type: 'square', from: 988, dur: 0.08, vol: 0.05 });
+    s.tone({ type: 'square', from: 740, dur: 0.12, vol: 0.05, delay: 0.08 });
+  },
+  matePiece: (s) => {
+    s.tone({ type: 'triangle', from: 300, to: 180, dur: 0.08, vol: 0.12 });
+    s.noise({ filter: 'lowpass', from: 1400, to: 300, dur: 0.12, vol: 0.07 });
+  },
+  checkmate: (s) => {
+    s.tone({ type: 'sine', from: 110, to: 40, dur: 0.5, vol: 0.16 });
+    s.noise({ filter: 'lowpass', from: 2400, to: 140, dur: 0.5, vol: 0.12 });
+    [784, 659, 523, 392].forEach((f, i) => s.tone({ type: 'square', from: f, dur: 0.1, vol: 0.035, delay: 0.12 + i * 0.08 }));
+  },
+  chessDrop: (s) => {
+    s.tone({ type: 'triangle', from: 260, to: 120, dur: 0.14, vol: 0.13 });
+    s.noise({ filter: 'lowpass', from: 1800, to: 200, dur: 0.22, vol: 0.1 });
+  },
+  pawnPop: (s) => s.tone({ type: 'triangle', from: 600, to: 820, dur: 0.05, vol: 0.06 }),
+  zugzwang: (s) => {
+    s.tone({ type: 'square', from: 330, dur: 0.06, vol: 0.04 });
+    s.tone({ type: 'square', from: 311, dur: 0.12, vol: 0.04, delay: 0.07 });
+  },
+  castle: (s) => {
+    s.tone({ type: 'triangle', from: 200, to: 90, dur: 0.18, vol: 0.14 });
+    s.noise({ filter: 'lowpass', from: 1600, to: 200, dur: 0.24, vol: 0.1 });
+  },
+});

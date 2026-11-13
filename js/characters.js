@@ -9,13 +9,15 @@
  *            'rise' (gancho ascendente), 'iceSpike', 'torch', 'teleport', 'copy' (Corvo: usa o
  *            último especial que viu o adversário usar), 'bubble' (Bolha do Tempo) ou
  *            'blackhole' (Buraco Negro), 'thread' (Fio da Marionete: com o fio preso, K de novo
- *            puxa) ou 'bomb' (bomba em arco do Pavio)
+ *            puxa), 'bomb' (bomba em arco do Pavio), 'root' (Raiz de Corte do Ademoir) ou 'pawn'
+ *            (Peão em Marcha da Dama)
  *            Sai com K/C ou com o comando ↓ ↘ → + soco
  * special2:  segundo especial (↓ + K ou ↓ ↙ ← + soco), se o lutador tiver
  * super:     golpe da barra de super (js/supers.js); sai com L/V com 1 barra cheia
  * domain:    nome da Expansão de Domínio (js/domains.js); sai com I/B com as 2 barras cheias
  * anims:     nome da animação para cada estado (as que faltarem usam a de parado)
  * portrait:  recorte do rosto (quadro, x, y, tamanho) usado no HUD da luta
+ * castle:    o agarrão vira o Roque (troca de lugar com o adversário e a torre cai nele)
  * quotes:    frases de vitória
  */
 window.Game = window.Game || {};
@@ -319,10 +321,65 @@ Game.characters = {
     portrait: { frame: 0, x: 13, y: 2, size: 18 },
     quotes: ['Fogo no pavio!', 'Batata quente? Fica com você.', 'Isso foi só o estalinho.'],
   },
+  ademoir: {
+    name: 'Ademoir',
+    short: 'ADEMOIR',
+    tip: 'Combo de 3 golpes de cajado · K: Raiz de Corte (a 1ª curva vem por baixo, a 2ª por cima) · ↓ + K: Armadura de Carvalho (o cajado vira armadura: bate mais e aguenta mais)',
+    blurb: 'Andarilho do cajado retorcido: raízes afiadas que fazem duas curvas, o cajado que vira uma armadura de carvalho no corpo todo e a Nova Floresta, que cresce em volta dele.',
+    sprite: 'ademoir',
+    color: '#7cc456',
+    anims: {
+      idle: 'idle', walk: 'walk', jump: 'jump', fall: 'fall', guard: 'stance', block: 'block', crouch: 'crouch',
+      hurt: 'hurt', hurtHeavy: 'hurtHeavy', knockFly: 'knockFly', lie: 'lie', getup: 'getup', dizzy: 'dizzy', win: 'win',
+    },
+    combo: ['jab', 'cross', 'kick'],
+    comboName: 'Combo de cajado: estocada, golpe de lado, golpe de cima',
+    airAttack: 'airKick',
+    airAttackName: 'Cajado no ar',
+    special: 'root',
+    specialName: 'Raiz de Corte',
+    special2: 'armor',
+    special2Name: 'Armadura de Carvalho Sagrado',
+    super: 'oak',
+    superName: 'FÚRIA DO CARVALHO',
+    domain: 'NOVA FLORESTA',
+    intro: 'intro',
+    guardTime: 1.2,
+    portrait: { frame: 3, x: 40, y: 26, size: 19 },
+    quotes: ['A floresta sempre volta.', 'Carvalho não quebra. Enverga.', 'Volta quando tiver raiz.'],
+  },
+  dama: {
+    name: 'Dama',
+    short: 'DAMA',
+    tip: 'Combo de socos e chute · K: Peão em Marcha (anda casa a casa, captura na diagonal e vira dama no fim) · ↓ + K: Salto do Cavalo (L por cima do adversário e pisão; no ar nada acerta) · agarrão: Roque',
+    blurb: 'Enxadrista dos cachos e do moletom rosa: o peão que marcha e vira dama, o salto em L do cavalo, o Roque que troca de lugar e o Tabuleiro Infinito, onde ficar parado é proibido.',
+    sprite: 'dama',
+    color: '#ff8fb3',
+    anims: {
+      idle: 'idle', walk: 'walk', jump: 'jump', fall: 'fall', guard: 'stance', block: 'block', crouch: 'crouch',
+      hurt: 'hurt', hurtHeavy: 'hurtHeavy', knockFly: 'knockFly', lie: 'lie', getup: 'getup', dizzy: 'dizzy', win: 'win',
+    },
+    combo: ['jab', 'cross', 'kick'],
+    comboName: 'Combo: soco reto, direto e chute alto',
+    airAttack: 'airKick',
+    airAttackName: 'Voadora',
+    special: 'pawn',
+    specialName: 'Peão em Marcha',
+    special2: 'knight',
+    special2Name: 'Salto do Cavalo',
+    castle: true,
+    super: 'checkmate',
+    superName: 'XEQUE-MATE',
+    domain: 'TABULEIRO INFINITO',
+    intro: 'intro',
+    guardTime: 1.2,
+    portrait: { frame: 3, x: 40, y: 27, size: 20 },
+    quotes: ['Xeque-mate.', 'Eu vi esse lance três jogadas atrás.', 'Peão também vira dama.'],
+  },
 };
 
 // Ordem na tela de seleção e na troca (Q, só na fase livre).
-Game.characterOrder = ['hood', 'kid', 'glasses', 'welder', 'brasa', 'gelida', 'trovao', 'corvo', 'ampulheta', 'orbita', 'marionete', 'pavio'];
+Game.characterOrder = ['hood', 'kid', 'glasses', 'welder', 'brasa', 'gelida', 'trovao', 'corvo', 'ampulheta', 'orbita', 'marionete', 'pavio', 'ademoir', 'dama'];
 
 // A versão sombria (chefe do arcade) tem frases próprias
 Game.shadowQuotes = ['Eu sou o que você esconde.', 'Cada golpe seu, eu já conhecia.', 'Ninguém foge da própria sombra.'];

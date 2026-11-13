@@ -6,7 +6,7 @@ Não precisa instalar nada nem rodar servidor: abra o `index.html` no navegador 
 ## Modos
 
 - **Arcade**: 4 lutas contra a CPU, cada uma melhor de 3 rounds de 60 s: três adversários
-  sorteados entre os outros onze (Corvo, Ampulheta e Órbita lutam na casa deles: Bambuzal,
+  sorteados entre os outros treze (Corvo, Ampulheta e Órbita lutam na casa deles: Bambuzal,
   Deserto ou Observatório; os outros num mapa sorteado) e, no fim,
   **a Sombra**, uma cópia sombria do seu lutador, no Telhado da Cidade à noite, com a CPU um
   nível mais difícil.
@@ -47,7 +47,7 @@ Não precisa instalar nada nem rodar servidor: abra o `index.html` no navegador 
 | **Rasteira** (golpe baixo) | `↓` + soco (também fecha o combo: soco, soco, `↓` + soco) | baixo + SOCO | baixo + A |
 | Especial | `K` ou `C` | ESP | B |
 | Especial pelo comando | `↓` `↘` `→` + soco | gire o direcional + SOCO | idem |
-| Segundo especial (Trovão, Soldador, Corvo, Ampulheta, Órbita, Marionete e Pavio) | `↓` + `K`, ou `↓` `↙` `←` + soco | baixo + ESP | idem |
+| Segundo especial (Trovão, Soldador, Corvo, Ampulheta, Órbita, Marionete, Pavio, Ademoir e Dama) | `↓` + `K`, ou `↓` `↙` `←` + soco | baixo + ESP | idem |
 | Bomba do Pavio | sem direção ela mira no adversário; segurando `←` cai perto, `→` vai longe | idem | idem |
 | Planar (só o Órbita) | segure o pulo no ar | segure PULO | segure cima/Y |
 | **Super** (meia barra) | `L` ou `V` | SUPER (acende com meia barra) | RB ou RT |
@@ -151,18 +151,20 @@ O jogo pausa sozinho se você trocar de aba ou de janela no meio da luta.
 | **Brasa** | jab → direto → chute flamejante | **Chama ascendente**: gancho que sobe, invencível no começo (ótimo contra pulos; se errar, fica aberto ao cair) | **Inferno**: sobe girando em chamas carregando o adversário |
 | **Gélida** | jab → soco de gelo → chute que derruba | **Pico de gelo**: a mão no chão faz o gelo brotar embaixo do adversário (aviso no chão, depois congela). No ar, soco faz o **Mergulho glacial**, um chute na diagonal até o chão | **Nevasca**: uma parede de neve que avança, prende, acerta 6 vezes e congela no fim |
 | **Soldador** (novo) | o próprio Óculos de serralheiro: jab → direto → chute de bota | **Maçarico**: abaixa a máscara de solda e solta uma chama curta que acerta 4 vezes e queima projéteis. **Portão de ferro** (`↓` + `K`): um portão despenca à frente, derruba quem estiver embaixo e fica de pé uns segundos como barreira (o adversário não atravessa andando, projéteis batem nele; pulando dá para passar) | **Jaula de Ferro**: uma jaula cai no adversário onde ele estiver, é soldada com ele dentro e explode |
-| **Corvo** (novo, da sua imagem) | soco → mão em faca → chute alto que derruba | **Olho Rubro**: solta o último especial que ele copiou do adversário (qualquer um dos 14 do jogo); sem cópia, **Kunai Rubra**. **Leitura** (`↓` + `K`): postura que contra-ataca qualquer golpe ou projétil, reaparecendo atrás de quem bateu | **Revoada**: um bando de 12 corvos atravessa a tela em cima do adversário; o último é gigante e derruba |
+| **Corvo** (novo, da sua imagem) | soco → mão em faca → chute alto que derruba | **Olho Rubro**: solta o último especial que ele copiou do adversário (qualquer um dos 22 do jogo); sem cópia, **Kunai Rubra**. **Leitura** (`↓` + `K`): postura que contra-ataca qualquer golpe ou projétil, reaparecendo atrás de quem bateu | **Revoada**: um bando de 12 corvos atravessa a tela em cima do adversário; o último é gigante e derruba |
 | **Ampulheta** (nova) | jab → direto → chute que derruba | **Bolha do Tempo**: joga uma ampulheta de areia que vira uma bolha de câmera lenta. **Rebobinar** (`↓` + `K`): volta no tempo e recupera a vida perdida | **Parada do Tempo**: o tempo para para todo mundo menos ela; o dano guardado cai de uma vez |
 | **Órbita** (novo) | jab → direto → chute que derruba | **Buraco Negro**: abre à frente, puxa o adversário e engole projéteis. **Antigravidade** (`↓` + `K`): o chão embaixo do adversário brilha e ele sai flutuando. Segurando o pulo no ar, **plana** | **Supernova**: uma estrela arremessada vira um buraco negro em volta do adversário, acerta 6 vezes e explode |
 | **Marionete** (nova) | jab → direto → chute que derruba | **Fio e Puxão**: lança um fio que prende o adversário; `K` de novo puxa ele até ela, aberto para o combo. **Fios Trocados** (`↓` + `K`): de perto, ou a qualquer distância pelo fio preso, troca a esquerda e a direita do adversário por alguns segundos | **Espetáculo**: a cruz de marionete desce em cima do adversário; preso nos fios, ele dança, apanha 6 vezes e cai quando ela corta os fios |
 | **Pavio** (novo) | jab → direto → chute que derruba | **Bomba**: joga uma bomba em arco que cai em cima do adversário (`←` cai perto, `→` vai longe; colado, ela vai direto nele), quica e explode ao encostar. **Bomba-relógio** (`↓` + `K`): gruda no adversário com um tapa; quem estiver com ela quando o relógio zerar leva a explosão, e cada golpe de quem está com ela passa a bomba para o outro | **Barril de Pólvora**: acende o pavio e chuta um barril que rola pelo chão e explode em quem encostar |
+| **Ademoir** (novo, das suas imagens) | estocada com o cajado → golpe de lado → pancada de cima que crava no chão e derruba (na forma de armadura: soco reto → gancho → martelo das manoplas) | **Raiz de Corte**: crava o cajado e uma raiz afiada corre por baixo da terra até o adversário e faz **duas curvas**: a 1ª sobe por baixo (só se defende agachado) e a 2ª desce de cima, mais forte (só se defende em pé). **Armadura de Carvalho Sagrado** (`↓` + `K`): numa animação curta o cajado brilha, vira raízes que sobem pelo corpo e se fecham numa armadura de madeira no **corpo todo** (elmo com coroa de galhos, ombreiras, manoplas, caneleiras, botas e capa de folhas); durante a transformação os golpes não a interrompem (só o agarrão). Nessa forma ele fica **maior**, toma **25% menos dano** e bate **20% mais forte** por 8 s; sem o cajado, os golpes viram socos e pancadas com as manoplas, de alcance um pouco menor. A casca racha à vista conforme apanha e quebra se apanhar demais; quando a forma acaba, o cajado volta | **Fúria do Carvalho**: avança; se encostar, três golpes e um carvalho brota embaixo do adversário e o arremessa |
+| **Dama** (nova, da sua foto) | soco reto → direto de trás (o ombro gira) → chute alto que derruba; no ar, voadora | **Peão em Marcha**: crava um peão no chão à frente, que **anda casa a casa**. Se o adversário estiver na casa da frente, o peão **captura na diagonal** (salta em cima dele e o derruba), fica na casa dele e segue marchando (na 2ª captura se desfaz); qualquer golpe quebra o peão. Se ele andar 6 casas (ou chegar na parede) sem ser parado, é **promovido**: vira uma **dama** que avança no adversário. Um peão por vez. **Salto do Cavalo** (`↓` + `K`): a casa onde ela vai pousar acende **atrás do adversário** e ela faz o L do cavalo — sobe reto duas casas, atravessa por cima dele e desce **pisando** (golpe de cima: só se defende em pé, e do lado certo, porque ela trocou de lado). No ar o cavalo pula por cima de tudo (golpes e projéteis passam); quem não quiser levar o pisão sai da casa marcada, e errar deixa ela aberta. Segurando para trás, salta três casas para trás e foge. **Roque** (o agarrão dela): troca de lugar com o adversário e uma torre cai em cima dele | **XEQUE-MATE**: uma fileira de casas corre pelo chão com uma torre na ponta; se pegar (**XEQUE!**), o adversário fica preso na casa e caem nele a torre, o bispo (na diagonal) e o cavalo (em L), e a **dama gigante** fecha o mate e arremessa |
 | **Trovão** | jab → cotovelada → chute que derruba | **Passo relâmpago**: some e reaparece atrás do adversário (se estiver perto) ou à frente; com ← foge para trás; dá para socar logo ao reaparecer. **Raio celeste** (`↓` + `K`): um raio cai em cima do adversário se ele estiver no chão à frente (com um aviso curto: andando dá para escapar); longe, cai a uma distância fixa (pega até quem pula) | **Fúria do Trovão**: seis raios seguidos em cima do adversário, onde ele estiver |
 
 Todos têm a **rasteira** (`↓` + soco) e o **chute aéreo** (soco no ar; a Gélida mergulha e o
 Trovão dá um soco aéreo). Cada um tem frases de vitória, e a pausa mostra a lista de golpes do seu lutador.
 
 **Equilíbrio**: os números de dano, alcance e tempo de cada especial foram ajustados com
-torneios CPU x CPU (todos contra todos, dos dois lados, centenas de lutas, agora com os 12).
+torneios CPU x CPU (todos contra todos, dos dois lados, centenas de lutas, agora com os 13).
 Ninguém ganha mais de ~2/3 das lutas nem menos de ~1/3; o resto depende de quem está jogando.
 
 ### Expansão de Domínio
@@ -193,6 +195,8 @@ Dentro do domínio, quem expandiu:
 | Ampulheta | **Deserto do Tempo**: pôr do sol parado com um relógio no sol (os ponteiros disparam), ampulhetas e relógios flutuando, arco e engrenagens na areia | o adversário fica em **câmera lenta** o domínio inteiro; a bolha é maior e dura mais; o Rebobinar recarrega rápido | o ponteiro gigante de um relógio desce em cima dele |
 | Marionete | **Teatro das Marionetes**: um palco com cortinas de veludo, holofote que segue o adversário, ribalta acesa, pétalas caindo e marionetes penduradas | o adversário fica **sempre preso por um fio**: o Puxão sai a qualquer hora e os Fios Trocados duram mais e não gastam o fio; cada acerto estala um fio | a cruz gigante desce, levanta o adversário e solta |
 | Pavio | **Pedreira Explosiva**: paredões de pedra ao pôr do sol, caixas de TNT, vagonete no trilho, poeira caindo e explosões ao longe | cada bomba solta **duas bombinhas** ao explodir; a bomba-relógio conta mais rápido; cada acerto solta um estouro | uma mina brota do chão e explode |
+| Ademoir | **Nova Floresta**: uma floresta sagrada que cresce em volta dele enquanto o domínio dura (as árvores brotam do chão em três estágios), com raios de sol, folhas caindo e vaga-lumes | a **Armadura de Carvalho** brota na hora, não acaba pelo tempo e a casca se refaz enquanto a floresta cresce; a Raiz de Corte faz uma **3ª curva**; cada acerto faz brotar um espinho | uma raiz gigante sai do chão, mais forte conforme a floresta cresce (com a floresta inteira, arremessa) |
+| Dama | **Tabuleiro Infinito**: um tabuleiro sem fim até o horizonte violeta, com um rei e uma dama gigantes na névoa, peças enormes em pé, casas soltas flutuando e brilhos | **Zugzwang**: o adversário que fica parado (em pé, agachado ou só defendendo) tem a casa marcada no chão e, se continuar parado, um peão brota embaixo dele sem defesa; o peão anda **duas casas por vez** (até três peões ao mesmo tempo); o Salto do Cavalo sai **sem espera**; cada acerto faz brotar um peãozinho | uma peça gigante (torre, bispo, cavalo, dama ou rei) cai na casa marcada embaixo dele |
 | Órbita | **Horizonte de Eventos**: o espaço, com um buraco negro gigante (o disco gira), planeta com anel, asteroides com cristais e estrelas cadentes | **gravidade baixa** para os dois (pulos altos e lentos); buraco negro maior e mais longo; a Antigravidade segura mais tempo | um meteoro cai do céu |
 
 **Embate de domínios**: se o adversário também estiver com a barra cheia, ele pode expandir o
@@ -270,6 +274,11 @@ js/entities/powers.js   poderes dos lutadores novos: kunai, corvos da Revoada, b
                         e os golpes dos domínios novos (corvo, ponteiro, meteoro)
 js/entities/powers2.js  Marionete e Pavio: fio, Puxão, Espetáculo, bomba, explosão, bomba-relógio,
                         Barril de Pólvora e os golpes dos domínios deles (cruz, fio, mina, estouro)
+js/entities/forest.js   Ademoir: Raiz de Corte (duas curvas), lascas da armadura, Fúria do Carvalho
+                        e os golpes da Nova Floresta (raiz gigante e espinho)
+js/entities/chess.js    Dama: peças de xadrez desenhadas pixel a pixel, Peão em Marcha (captura e
+                        promoção), a casa do Salto do Cavalo, a torre do Roque, XEQUE-MATE e os
+                        golpes do Tabuleiro Infinito (peça gigante e peãozinho)
 js/domains.js           Expansão de Domínio: cenários, bônus, ecos, acerto garantido e embate
 js/modes.js             regras dos modos Equipes 3x3, Caos e Desafios
 js/ai.js                CPU e boneco do treino
@@ -287,11 +296,14 @@ js/main.js              carrega as imagens e inicia
 assets/sprites/         player.png (Garoto), hood.png (Encapuzado), brasa.png (Brasa), npc.png (Óculos),
                         gelida.png (Gélida), trovao.png (Trovão), welder.png (Soldador),
                         corvo.png (Corvo), ampulheta.png (Ampulheta), orbita.png (Órbita),
-                        marionete.png (Marionete) e pavio.png (Pavio)
+                        marionete.png (Marionete), pavio.png (Pavio), ademoir.png (Ademoir;
+                        ademoir_armor3/2/1.png é a forma de armadura inteira, rachada e quebrando)
+                        e dama.png (Dama)
 assets/tiles/           grama, terra, telhado, tijolos, assoalho, vigas, pedra, areia, metal,
                         caixas e decoração (16×16)
 assets/backgrounds/     sky.png (original), city, dojo, bamboo, desert e observ (_far e _mid)
-assets/domains/         os 12 cenários de domínio, em 3 camadas cada (fundo, meio e chão)
+assets/domains/         os 14 cenários de domínio, em 3 camadas cada (fundo, meio e chão; a Nova
+                        Floresta tem três camadas do meio, uma para cada estágio da floresta)
 ```
 
 ## Fluidez
@@ -325,7 +337,9 @@ com as camadas (`layers`: imagem, `factor` de paralaxe) e a cor de fundo, e a ch
 
 **Ajuste fino**: vida, tempo, barra (níveis e quanto enche), agarrão, gelo, tontura, pulo e dash
 em `config.fight`; duração, bônus e acerto garantido do domínio em `config.domain`; pico de gelo,
-teleporte e raio em `config.iceSpike`, `config.teleport` e `config.bolt`; a CPU por dificuldade em
+teleporte e raio em `config.iceSpike`, `config.teleport` e `config.bolt`; a Raiz de Corte, a
+Armadura de Carvalho (tempo, resistência, defesa e força da forma) e a Fúria do Carvalho em
+`config.root`, `config.armor` e `config.oak`; a CPU por dificuldade em
 `config.cpu`; teclas em `config.keys` e `config.keysVersus`.
 
 ## Sobre as imagens
@@ -364,9 +378,27 @@ teleporte e raio em `config.iceSpike`, `config.teleport` e `config.bolt`; a CPU 
   óculos de proteção, colete laranja refletivo, macacão azul-marinho, luvas de couro e uma bomba
   de pavio aceso na mão. Poses próprias: lançar o fio, puxar, trocar os fios, reger o
   Espetáculo, jogar a bomba, grudar a bomba-relógio e chutar o barril.
+- **Ademoir** (`ademoir.png` e `ademoir_armor3/2/1.png`): desenhado pose a pose num rig de pixel art
+  (esqueleto com ângulos de juntas; membros, casaco, cajado e armadura pintados pixel a pixel, com
+  sombra de 3 tons e contorno). A cabeça é a da arte enviada (cabelo vermelho e barba, reduzida para
+  a altura dos outros lutadores); o corpo foi refeito para cada golpe ter vários quadros (preparação,
+  golpe, segura e volta) sem rastro de cor. A **forma de armadura** é um desenho novo, maior: elmo com
+  coroa de galhos e folhas, viseira com olhos de seiva e as mechas vermelhas escapando atrás, ombreiras
+  de casca, peitoral de cerne com a folha sagrada brilhando, cinto de cipó com fivela de bolota,
+  manoplas, saiote de placas, caneleiras, botas e capa de folhas. As versões 2 e 1 são a armadura
+  rachando. A **transformação** (oito quadros na folha base) mostra o cajado brilhando e virando raízes
+  que sobem pelo corpo e viram a armadura. As caixas dos golpes foram medidas no próprio desenho.
+- **Dama** (`dama.png`): feita a partir da foto enviada, no mesmo rig de pixel art do Ademoir.
+  Cabelo castanho-escuro **cacheado e volumoso**, com **franja de cachos** e mechas caindo até os
+  ombros (a silhueta é feita de bolinhas, e cada cacho é um pequeno arco claro sobre o cabelo
+  escuro), pele morena clara, **moletom rosa largo** de manga comprida com punhos canelados, **calça
+  jeans escura** e tênis escuros de sola branca. A estampa do moletom da foto virou um
+  **tabuleirinho de xadrez** no peito (desenho original). As peças que ela segura (peão, cavalo e
+  a dama brilhando) estão desenhadas nos quadros; as peças grandes do jogo (peão que marcha, torre,
+  bispo, cavalo, dama e rei) são desenhadas pixel a pixel no código.
 - **Sombra**: o jogo escurece a folha do lutador e desenha um contorno roxo, na hora (no domínio
   da Sombra, o cenário inteiro afunda em roxo).
-- **Domínios**: os 12 cenários foram desenhados por código em pixel art, em três camadas com
+- **Domínios**: os 13 cenários foram desenhados por código em pixel art, em três camadas com
   paralaxe; neve, aurora, chuva, relâmpagos, brasas, páginas, confete, holofotes, faíscas,
   clarões de solda, pétalas, poeira e explosões ao longe são animados pelo jogo.
 - **Mapas novos** (Cidade, Dojo, Bambuzal, Deserto e Observatório) e os tiles de telhado,

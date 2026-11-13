@@ -402,6 +402,14 @@ Game.sprites = {
       tangle: { frames: [42, 43, 43], durations: [0.08, 0.1, 0.16], loop: false, release: 1, tangle: true },
       bombThrow: { frames: [39, 40, 41], durations: [0.12, 0.12, 0.14], loop: false, release: 1, bomb: true, muzzle: { x: 12, y: -34 } },
       plant: { frames: [37, 38, 38], durations: [0.1, 0.1, 0.16], loop: false, release: 1, plant: true },
+      // cópias do Ademoir: mão no chão solta a Raiz de Corte; postura da Leitura veste a armadura
+      rootCast: { frames: [54, 55, 55], durations: [0.08, 0.12, 0.2], loop: false, release: 1, root: true },
+      armorCast: { frames: [42, 43, 43], durations: [0.1, 0.22, 0.1], loop: false, release: 1, armor: true },
+      // cópias da Dama: mão no chão crava o peão; o Salto do Cavalo usa o pulo e a queda
+      pawnCast: { frames: [54, 55, 55], durations: [0.08, 0.12, 0.16], loop: false, release: 1, pawn: true, muzzle: { x: 18, y: -2 } },
+      knightJump: { frames: [15, 12, 12], durations: [0.07, 0.1, 1], loop: false, knight: true },
+      knightDrop: { frames: [13], durations: [1], loop: false },
+      knightLand: { frames: [15, 15, 3], durations: [0.12, 0.1, 0.08], loop: false },
       // Leitura: postura do olho rubro; se alguém acertar nela, some em penas e corta pelas costas
       counter: { frames: [42, 43, 43], durations: [0.05, 0.32, 0.26], loop: false, counter: { until: 1 } },
       slash: {
@@ -552,4 +560,184 @@ Game.sprites = {
     sweep: sweep(49),
     intro: { frames: [23, 24, 23, 24, 2], durations: [0.12, 0.12, 0.12, 0.12, 0.25], loop: false },
   });
+})();
+
+/*
+ * Ademoir (cajado e raízes): desenhado pose a pose num rig de pixel art (ad_rig2.py, ad_forms.py,
+ * ad_poses.py, ad_build2.py). A cabeça é a da arte enviada (cabelo vermelho e barba); o corpo, o casaco
+ * comprido, os tênis e o cajado de forquilha são do rig, para cada golpe ter vários quadros (preparação,
+ * golpe, segura e volta) sem rastro. Quadros 96×64, pés na linha de baixo, corpo centrado em x = 48.
+ *
+ * A forma de Armadura de Carvalho Sagrado tem folha própria (ademoir_armor3/2/1.png: inteira, rachada
+ * e quase quebrando) e animações próprias (armorAnimations): o cajado vira a armadura do corpo todo
+ * (elmo com coroa de galhos, viseira com olhos de seiva, ombreiras de casca, peitoral de cerne com a
+ * folha sagrada, manoplas, saiote de placas, caneleiras, botas e capa de folhas), ele fica maior e os
+ * golpes são com as manoplas. A transformação (armorCast) está na folha base: oito quadros.
+ * As caixas dos golpes foram medidas no desenho (ponta do cajado / manopla).
+ */
+(function () {
+  Game.sprites.ademoir = {
+    image: 'ademoir',
+    armorImages: ['ademoirArmor1', 'ademoirArmor2', 'ademoirArmor3'],
+    frameWidth: 96,
+    frameHeight: 64,
+    anchor: { x: 48, y: 64 },
+    headY: 23,
+    armorHeadY: 14,
+    animations: {
+      idle: { frames: [0, 1, 2, 1], durations: [0.32, 0.26, 0.32, 0.26] },
+      stance: { frames: [3, 4, 5, 4], durations: [0.22, 0.2, 0.22, 0.2] },
+      walk: { frames: [6, 7, 8, 9, 10, 11, 12, 13], fps: 12.05 },
+      jump: { frames: [14, 15], durations: [0.1, 0.3], loop: false },
+      fall: { frames: [16, 17], durations: [0.12, 0.3], loop: false },
+      block: { frames: [18], durations: [1] },
+      crouch: { frames: [19], durations: [1] },
+      hurt: { frames: [20, 21], durations: [0.1, 0.2], loop: false },
+      hurtHeavy: { frames: [22], durations: [1] },
+      knockFly: { frames: [23], durations: [1] },
+      lie: { frames: [24], durations: [1] },
+      getup: { frames: [25, 26, 27], durations: [0.14, 0.12, 0.1], loop: false },
+      dizzy: { frames: [28, 29], durations: [0.34, 0.34] },
+      win: { frames: [30, 31, 32], durations: [0.5, 0.25, 0.5] },
+      // estocada (recolhe, estoca, segura, volta)
+      jab: { frames: [33, 34, 35, 36], durations: [0.06, 0.06, 0.05, 0.09], loop: false,
+        hit: { frame: 1, x: 2, y: -24, w: 25, h: 10, damage: 5, knockback: 70 } },
+      // golpe de lado (por cima do ombro até a altura do peito)
+      cross: { frames: [37, 38, 39, 40, 41], durations: [0.04, 0.03, 0.06, 0.05, 0.1], loop: false, lunge: 50,
+        hit: { frame: 2, x: 2, y: -24, w: 25, h: 16, damage: 7, knockback: 120, heavy: true } },
+      // pancada de cima que crava no chão à frente
+      kick: { frames: [42, 43, 44, 45, 46, 47], durations: [0.04, 0.03, 0.05, 0.07, 0.1, 0.1], loop: false, lunge: 90,
+        hit: { frame: 2, x: 2, y: -27, w: 26, h: 23, damage: 10, knockback: 160, heavy: true, launch: true } },
+      // cajado de cima para baixo no ar
+      airKick: { frames: [48, 49, 50], durations: [0.12, 0.1, 0.12], loop: false,
+        hit: { frame: 1, x: 2, y: -30, w: 25, h: 30, damage: 8, knockback: 120, heavy: true } },
+      grab: { frames: [51, 52, 53], durations: [0.08, 0.12, 0.18], loop: false },
+      // rasteira com o cajado rente ao chão
+      sweep: { frames: [54, 55, 56, 57, 58], durations: [0.04, 0.03, 0.07, 0.07, 0.14], loop: false,
+        hit: { frame: 2, x: 2, y: -18, w: 28, h: 18, damage: 8, knockback: 110, heavy: true, launch: true, trip: true, low: true } },
+      // Raiz de Corte: ergue e crava o cajado
+      rootCast: { frames: [59, 60, 61, 62, 27], durations: [0.05, 0.03, 0.14, 0.12, 0.08], loop: false, release: 2, root: true },
+      // Armadura de Carvalho Sagrado: o cajado brilha, vira raízes que sobem pelo corpo e viram a armadura
+      armorCast: { frames: [63, 64, 65, 66, 67, 68, 69, 70], durations: [0.04, 0.04, 0.04, 0.04, 0.04, 0.04, 0.04, 0.08], loop: false, release: 6, armor: true },
+      superPose: { frames: [71, 72], durations: [0.2, 0.2] },
+      oakDash: { frames: [73, 74], durations: [0.08, 0.08] },
+      oakHit1: { frames: [34], durations: [0.06] },
+      oakHit2: { frames: [39], durations: [0.06] },
+      oakHit3: { frames: [45], durations: [0.07] },
+      oakPlant: { frames: [61, 62], durations: [0.14, 0.12] },
+      domain: { frames: [71, 72], durations: [0.2, 0.2] },
+      intro: { frames: [75, 76, 77, 78, 60, 27], durations: [0.12, 0.1, 0.1, 0.1, 0.3, 0.2], loop: false },
+    },
+    // forma de armadura: mesmas animações, quadros da folha da armadura
+    armorAnimations: {
+      idle: { frames: [0, 1, 2, 1], durations: [0.34, 0.26, 0.34, 0.26] },
+      stance: { frames: [3, 4, 5, 4], durations: [0.22, 0.2, 0.22, 0.2] },
+      walk: { frames: [6, 7, 8, 9, 10, 11, 12, 13], fps: 10.99 },
+      jump: { frames: [14, 15], durations: [0.1, 0.3], loop: false },
+      fall: { frames: [16, 17], durations: [0.12, 0.3], loop: false },
+      block: { frames: [18], durations: [1] },
+      crouch: { frames: [19], durations: [1] },
+      hurt: { frames: [20, 21], durations: [0.1, 0.2], loop: false },
+      hurtHeavy: { frames: [22], durations: [1] },
+      knockFly: { frames: [23], durations: [1] },
+      lie: { frames: [24], durations: [1] },
+      getup: { frames: [25, 26, 27], durations: [0.14, 0.12, 0.1], loop: false },
+      dizzy: { frames: [28, 29], durations: [0.34, 0.34] },
+      win: { frames: [30, 31, 32], durations: [0.5, 0.25, 0.5] },
+      // soco reto de manopla
+      jab: { frames: [33, 34, 35, 36], durations: [0.06, 0.06, 0.05, 0.09], loop: false,
+        hit: { frame: 1, x: 4, y: -30, w: 18, h: 16, damage: 5, knockback: 70 } },
+      // gancho largo
+      cross: { frames: [37, 38, 39, 40, 41], durations: [0.04, 0.03, 0.06, 0.05, 0.1], loop: false, lunge: 50,
+        hit: { frame: 2, x: 4, y: -33, w: 18, h: 24, damage: 7, knockback: 120, heavy: true } },
+      // martelo das manoplas no chão
+      kick: { frames: [42, 43, 44, 45, 46, 47], durations: [0.04, 0.03, 0.05, 0.07, 0.1, 0.1], loop: false, lunge: 90,
+        hit: { frame: 2, x: 4, y: -32, w: 18, h: 28, damage: 10, knockback: 160, heavy: true, launch: true } },
+      // martelo das manoplas no ar
+      airKick: { frames: [48, 49, 50], durations: [0.12, 0.1, 0.12], loop: false,
+        hit: { frame: 1, x: 4, y: -36, w: 17, h: 36, damage: 8, knockback: 120, heavy: true } },
+      grab: { frames: [51, 52, 53], durations: [0.08, 0.12, 0.18], loop: false },
+      // soco baixo rente ao chão
+      sweep: { frames: [54, 55, 56, 57, 58], durations: [0.04, 0.03, 0.07, 0.07, 0.14], loop: false,
+        hit: { frame: 2, x: 4, y: -21, w: 20, h: 21, damage: 8, knockback: 110, heavy: true, launch: true, trip: true, low: true } },
+      // Raiz de Corte: soco no chão
+      rootCast: { frames: [59, 60, 61, 62, 27], durations: [0.05, 0.03, 0.14, 0.12, 0.08], loop: false, release: 2, root: true },
+      // acabou de vestir: pousa firme
+      armorCast: { frames: [63, 64], durations: [0.14, 0.12], loop: false },
+      superPose: { frames: [65, 66], durations: [0.2, 0.2] },
+      oakDash: { frames: [67, 68], durations: [0.08, 0.08] },
+      oakHit1: { frames: [34], durations: [0.06] },
+      oakHit2: { frames: [39], durations: [0.06] },
+      oakHit3: { frames: [45], durations: [0.07] },
+      oakPlant: { frames: [61, 62], durations: [0.14, 0.12] },
+      domain: { frames: [65, 66], durations: [0.2, 0.2] },
+      intro: { frames: [30, 31, 32], durations: [0.5, 0.25, 0.5], loop: false },
+    },
+  };
+})();
+
+/*
+ * Dama (xadrez): desenhada pose a pose no mesmo rig de pixel art do Ademoir (work/dama: dm_forms.py,
+ * dm_poses.py, dm_build.py). Cabelo cacheado volumoso com franja, moletom rosa largo com um
+ * tabuleirinho estampado, calça jeans escura e tênis. Os golpes são socos e chutes; as peças de
+ * xadrez na mão (peão, cavalo, dama) estão desenhadas nos quadros. Quadros 96×64, pés na linha de
+ * baixo, corpo centrado em x = 48. As caixas dos golpes foram medidas no desenho (punho / pé).
+ */
+(function () {
+  Game.sprites.dama = {
+    image: 'dama',
+    frameWidth: 96,
+    frameHeight: 64,
+    anchor: { x: 48, y: 64 },
+    headY: 22,
+    animations: {
+      idle: { frames: [0, 1, 2, 1], durations: [0.34, 0.26, 0.14, 0.26] },
+      stance: { frames: [3, 4, 5, 4], durations: [0.22, 0.2, 0.22, 0.2] },
+      walk: { frames: [6, 7, 8, 9, 10, 11, 12, 13], fps: 12.05 },
+      jump: { frames: [14, 15], durations: [0.1, 0.3], loop: false },
+      fall: { frames: [16, 17], durations: [0.12, 0.3], loop: false },
+      block: { frames: [18], durations: [1] },
+      crouch: { frames: [19], durations: [1] },
+      hurt: { frames: [20, 21], durations: [0.1, 0.2], loop: false },
+      hurtHeavy: { frames: [22], durations: [1] },
+      knockFly: { frames: [23], durations: [1] },
+      lie: { frames: [24], durations: [1] },
+      getup: { frames: [25, 26, 3], durations: [0.14, 0.12, 0.1], loop: false },
+      dizzy: { frames: [27, 28], durations: [0.34, 0.34] },
+      // ergue a dama brilhando
+      win: { frames: [29, 30, 31], durations: [0.3, 0.3, 0.3] },
+      // soco reto da mão da frente
+      jab: { frames: [32, 33, 34, 35], durations: [0.05, 0.05, 0.05, 0.08], loop: false,
+        hit: { frame: 1, x: 2, y: -24, w: 19, h: 12, damage: 5, knockback: 70 } },
+      // direto de trás (o ombro gira e o braço de trás passa pela frente)
+      cross: { frames: [36, 37, 38, 39], durations: [0.05, 0.05, 0.05, 0.1], loop: false, lunge: 50,
+        hit: { frame: 1, x: 2, y: -25, w: 20, h: 16, damage: 7, knockback: 120, heavy: true } },
+      // chute alto com a perna da frente
+      kick: { frames: [40, 41, 42, 43, 44, 45], durations: [0.03, 0.03, 0.06, 0.06, 0.08, 0.08], loop: false, lunge: 100,
+        hit: { frame: 2, x: 2, y: -21, w: 21, h: 15, damage: 10, knockback: 160, heavy: true, launch: true } },
+      // voadora
+      airKick: { frames: [46, 47, 48], durations: [0.14, 0.12, 0.08], loop: false,
+        hit: { frame: 0, lastFrame: 1, sweep: true, x: 2, y: -30, w: 19, h: 30, damage: 8, knockback: 120, heavy: true } },
+      grab: { frames: [49, 50, 51], durations: [0.08, 0.12, 0.18], loop: false },
+      // rasteira rente ao chão
+      sweep: { frames: [52, 53, 54, 55, 52], durations: [0.04, 0.03, 0.07, 0.07, 0.14], loop: false,
+        hit: { frame: 2, x: 2, y: -6, w: 21, h: 7, damage: 8, knockback: 110, heavy: true, launch: true, trip: true, low: true } },
+      // Peão em Marcha: ergue o peão e crava no chão à frente
+      pawnCast: { frames: [56, 57, 58, 59, 60], durations: [0.05, 0.04, 0.08, 0.07, 0.06], loop: false, release: 2, pawn: true, muzzle: { x: 18, y: -2 } },
+      // Salto do Cavalo: agacha, salta encolhida com o cavalo brilhando (o L é feito no código)
+      knightJump: { frames: [61, 62, 63], durations: [0.07, 0.1, 1], loop: false, knight: true },
+      // desce pisando
+      knightDrop: { frames: [64], durations: [1], loop: false },
+      // pisão na casa marcada
+      knightLand: { frames: [65, 66, 60], durations: [0.12, 0.1, 0.08], loop: false },
+      // XEQUE-MATE: aponta a dama brilhando
+      superPose: { frames: [67, 68], durations: [0.2, 0.2] },
+      // chama a dama gigante
+      mateCall: { frames: [69, 70], durations: [0.2, 0.2] },
+      // Tabuleiro Infinito: o cavalo erguido brilhando
+      domain: { frames: [71, 72], durations: [0.2, 0.2] },
+      // joga o cavalo para cima, pega e entra na guarda
+      intro: { frames: [73, 74, 75, 76, 77, 3], durations: [0.12, 0.1, 0.12, 0.1, 0.34, 0.2], loop: false },
+    },
+  };
 })();

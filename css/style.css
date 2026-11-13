@@ -849,17 +849,17 @@ kbd + kbd { margin-left: 3px; }
   text-transform: uppercase;
 }
 
-/* 10 lutadores: 2 linhas de 5 */
+/* 13 lutadores: 2 linhas de 7 */
 .roster {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: clamp(6px, 1.4vmin, 14px);
   width: 100%;
 }
 
 @media (orientation: portrait) {
-  .roster { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-  /* 6 cartas numa linha estreita: nomes menores para caber */
+  .roster { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  /* 7 cartas numa linha estreita: nomes menores para caber */
   .card-name { font-size: clamp(8px, 2.3vw, 16px); letter-spacing: 0; }
 }
 

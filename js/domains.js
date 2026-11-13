@@ -96,6 +96,20 @@ Game.DOMAINS = {
     layers: ['domPavioFar', 'domPavioMid', 'domPavioFloor'], fx: 'quarry', sure: 'mine', echo: 'blast',
     perk: 'cada bomba solta duas bombinhas ao explodir; a bomba-relógio conta mais rápido; minas brotam do chão',
   },
+  ademoir: {
+    name: 'NOVA FLORESTA', color: '#7cc456', light: '#e8f8b0', dark: '#0e1c12',
+    layers: ['domAdemoirFar', 'domAdemoirMid1', 'domAdemoirFloor'], fx: 'forest', sure: 'oakRoot', echo: 'thorn',
+    // a floresta cresce enquanto o domínio dura: as árvores brotam do chão em três estágios
+    stages: ['domAdemoirMid1', 'domAdemoirMid2', 'domAdemoirMid3'],
+    perk: 'a floresta cresce enquanto dura: a Armadura de Carvalho brota na hora e não acaba; as raízes garantidas ficam mais fortes; a Raiz de Corte faz uma 3ª curva',
+  },
+  dama: {
+    name: 'TABULEIRO INFINITO', color: '#ff8fb3', light: '#ffe0ea', dark: '#140a1c',
+    layers: ['domDamaFar', 'domDamaMid', 'domDamaFloor'], fx: 'chess', sure: 'chessDrop', echo: 'pawnPop',
+    // Zugzwang: quem fica parado no tabuleiro é obrigado a se mexer (ou um peão brota embaixo dele)
+    zugzwang: true,
+    perk: 'Zugzwang: o adversário parado apanha; o peão anda duas casas (até três peões) e o Salto do Cavalo sai sem espera',
+  },
 };
 
 // Paralaxe das três camadas (0 = parada na tela, 1 = presa ao chão)
@@ -131,6 +145,8 @@ Game.Domain = class Domain {
     this.challenger = null;
     this.lastRect = null;
     this.origin = { x: owner.cx, y: owner.feet - 16 };
+    this.stage = 0;     // Nova Floresta: quanto a floresta já cresceu (1–3)
+    this.stageT = 0;    // tempo desde que ela cresceu da última vez
     if (this.phase === 'reveal') this.begin(scene);
   }
 
@@ -156,12 +172,36 @@ Game.Domain = class Domain {
     this.applyBuffs(true);
     scene.effects.shake(0.25, 2);
     Game.events.emit('domainOpen', { domain: this, owner: this.owner });
+    if (this.def.stages) this.growForest(1, scene);
+  }
+
+  /**
+   * Nova Floresta: a floresta cresce (as árvores novas brotam do chão). Ao abrir, o dono veste a
+   * Armadura de Carvalho; depois, a cada vez que a floresta cresce, a casca dele se refaz inteira.
+   */
+  growForest(n, scene) {
+    this.stage = n;
+    this.stageT = 0;
+    const o = this.owner;
+    if (o.char.special2 === 'armor' && !o.ko) {
+      if (!o.armor) o.putArmor(scene, n > 1);
+      else o.armor.hp = o.armor.max;
+    }
+    if (this.lastRect && n > 1) {
+      const r = this.lastRect;
+      for (let i = 0; i < 18; i++) {
+        Game.leafBurst(scene, r.x + Math.random() * r.w, (o.groundY || r.y + r.h) - 2, 1);
+      }
+    }
+    Game.events.emit('forestGrow', { owner: o, stage: n });
   }
 
   applyBuffs(on) {
     const o = this.owner;
     const f = this.foe;
     o.inDomain = on;
+    // a floresta acabou: a Armadura de Carvalho que ela sustentava dura só mais um pouco
+    if (!on && o.armor && o.char.special2 === 'armor') o.armor.t = Math.min(o.armor.t, 3);
     o.speedMult = on ? this.cfg.ownerSpeed : 1;
     if (f) f.speedMult = on ? this.cfg.foeSpeed : 1;
   }
@@ -189,7 +229,14 @@ Game.Domain = class Domain {
         this.collapse(scene);
         return;
       }
+      if (this.def.stages) {
+        this.stageT += dt;
+        const k = this.def.stages.length;
+        const n = Math.min(k, Math.floor((this.cfg.duration - this.left) / (this.cfg.duration / k)) + 1);
+        if (n > this.stage) this.growForest(n, scene);
+      }
       if (!scene.locked) this.updateSure(dt, scene);
+      if (this.def.zugzwang && !scene.locked) this.updateZugzwang(dt, scene);
     } else if (this.phase === 'break' && this.t >= this.cfg.breakTime) {
       if (scene.domain === this) scene.domain = null;
       Game.events.emit('domainEnd', { owner: this.owner });
@@ -223,11 +270,12 @@ Game.Domain = class Domain {
   updateSure(dt, scene) {
     const foe = this.foe;
     if (!foe || foe.ko) return;
+    const damage = this.cfg.sureDamage;
     this.sureTimer -= dt;
     if (this.sureTimer > 0) return;
     this.sureTimer = this.cfg.sureEvery;
     const kind = this.def.sure;
-    const hit = { damage: this.cfg.sureDamage, knockback: 60, heavy: true, special: true, unblockable: true, sure: true, echo: true };
+    const hit = { damage, knockback: 60, heavy: true, special: true, unblockable: true, sure: true, echo: true };
     if (kind === 'icicle') hit.freeze = 0.5;
     if (kind === 'flame') hit.burn = 2;
     if (kind === 'gateClose') {
@@ -239,8 +287,31 @@ Game.Domain = class Domain {
     if (kind === 'meteor') hit.knockback = 70;
     if (kind === 'puppetDrop') hit.knockback = 30;
     if (kind === 'mine') hit.knockback = 90;
+    if (kind === 'chessDrop') hit.knockback = 70;
+    if (kind === 'oakRoot') {
+      // quanto maior a floresta, mais forte a raiz; com a floresta inteira ela arremessa
+      hit.knockback = 70 + this.stage * 20;
+      if (this.stage >= this.def.stages.length) hit.launch = true;
+    }
     scene.add(new Game.Strike(this.owner, kind, foe.cx, { sure: true, track: foe, warn: this.cfg.sureWarn, hit }));
     Game.events.emit('sureWarn', { owner: this.owner, target: foe });
+  }
+
+  /**
+   * Tabuleiro Infinito: o adversário parado (de pé, agachado ou defendendo, sem andar) tempo demais
+   * entra em Zugzwang: um peão brota embaixo dele, sem defesa, e a conta recomeça.
+   */
+  updateZugzwang(dt, scene) {
+    const foe = this.foe;
+    const c = Game.config.zugzwang;
+    if (!foe || foe.ko || foe.hidden) return;
+    const still = foe.onGround && Math.abs(foe.vx) < 8 && !foe.attack && ['idle', 'crouch', 'block'].includes(foe.state);
+    this.zug = still ? (this.zug || 0) + dt : 0;
+    if (this.zug >= c.still) {
+      this.zug = c.still - c.every;
+      scene.add(new Game.Strike(this.owner, 'pawnPop', foe.cx, { warn: 0.14, track: foe, hit: Object.assign({}, c.hit) }));
+      Game.events.emit('zugzwang', { owner: this.owner, target: foe });
+    }
   }
 
   // ------------------------------------------------------------------ golpes
@@ -270,7 +341,7 @@ Game.Domain = class Domain {
     if (!kind) return;
     const damage = owner.charKey === 'kid' ? Math.max(2, Math.round(hit.damage * 0.5)) : 2;
     scene.add(new Game.Strike(owner, kind, target.cx, {
-      warn: kind === 'fist' || kind === 'peck' || kind === 'snap' ? 0.07 : kind === 'sparks' || kind === 'tick' || kind === 'pebble' || kind === 'blast' ? 0.1 : 0.15,
+      warn: kind === 'fist' || kind === 'peck' || kind === 'snap' ? 0.07 : kind === 'sparks' || kind === 'tick' || kind === 'pebble' || kind === 'blast' || kind === 'thorn' || kind === 'pawnPop' ? 0.1 : 0.15,
       track: target, small: true,
       hit: { damage, knockback: 30, special: true, unblockable: true, echo: true, stop: 'multi' },
     }));
@@ -510,6 +581,28 @@ Game.Domain = class Domain {
         add({ x: foe.cx - 18 + rnd() * 36, y: floor - rnd() * 60, vx: -3 + rnd() * 6, vy: -(4 + rnd() * 8), life: 1.6 + rnd(),
           size: 1, color: rnd() < 0.5 ? '#fff6d8' : '#ffe8a8', front: rnd() < 0.3 });
       }
+    } else if (fx === 'forest') {
+      // folhas caindo (mais conforme a floresta cresce) e vaga-lumes subindo do chão
+      const grow = Math.max(1, this.stage || 1);
+      if (rnd() < dt * (4 + grow * 3)) {
+        const front = rnd() < 0.35;
+        add({ x: r.x + rnd() * (r.w + 40) - 20, y: r.y - 4, vx: -10 + rnd() * 20, vy: 14 + rnd() * 12, life: 9, petal: true, leaf: true,
+          color: ['#57a33e', '#8fd05a', '#c8d850', '#e09040'][Math.floor(rnd() * 4)], front, sway: rnd() * 6 });
+      }
+      if (rnd() < dt * 6) {
+        add({ x: r.x + rnd() * r.w, y: floor - 4 - rnd() * 50, vx: -4 + rnd() * 8, vy: -(3 + rnd() * 7), life: 2.4 + rnd() * 1.5,
+          size: 1, color: rnd() < 0.6 ? '#f0ff9a' : '#c8ff70', front: rnd() < 0.25 });
+      }
+    } else if (fx === 'chess') {
+      // casinhas do tabuleiro soltando do chão e subindo devagar, e brilhos no céu
+      if (rnd() < dt * 6) {
+        add({ x: r.x + rnd() * r.w, y: floor - 2 - rnd() * 10, vx: -3 + rnd() * 6, vy: -(6 + rnd() * 10), life: 5, square: true,
+          size: 2 + Math.floor(rnd() * 2), color: rnd() < 0.5 ? '#ffe0ea' : '#3a2142', front: rnd() < 0.25 });
+      }
+      if (rnd() < dt * 5) {
+        add({ x: r.x + rnd() * r.w, y: r.y + rnd() * Math.max(10, floor - r.y - 40), vx: 0, vy: 0, life: 0.8 + rnd(), twinkle: true,
+          color: '#ffd0e0', front: false });
+      }
     } else if (fx === 'quarry') {
       // poeira e pedrinhas caindo dos paredões
       if (rnd() < dt * 7) {
@@ -703,7 +796,29 @@ Game.Domain = class Domain {
     const [f0, f1] = Game.DOMAIN_FACTORS;
     ctx.drawImage(far, placeX(far, f0), Math.round(floor - far.height));
     this.drawLights(ctx, r, floor, placeX(far, f0));
-    ctx.drawImage(midL, placeX(midL, f1), Math.round(floor - midL.height));
+    if (def.stages) {
+      // Nova Floresta: o meio é a floresta do tamanho atual; quando ela cresce, a nova brota do chão
+      const n = Math.max(1, Math.min(def.stages.length, this.stage || 1));
+      const cur = Game.assets.get(def.stages[n - 1]);
+      const mx = placeX(cur, f1);
+      const my = Math.round(floor - cur.height);
+      const grow = n > 1 ? Math.min(1, this.stageT / 0.8) : 1;
+      if (grow < 1) {
+        const prev = Game.assets.get(def.stages[n - 2]);
+        ctx.drawImage(prev, mx, my);
+        const h = Math.round(cur.height * (1 - Math.pow(1 - grow, 2)));
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(mx, my + cur.height - h, cur.width, h);
+        ctx.clip();
+        ctx.drawImage(cur, mx, my);
+        ctx.restore();
+      } else {
+        ctx.drawImage(cur, mx, my);
+      }
+    } else {
+      ctx.drawImage(midL, placeX(midL, f1), Math.round(floor - midL.height));
+    }
     this.drawParticles(ctx, false);
     ctx.drawImage(floorImg, Math.round((mapW - floorImg.width) / 2), Math.round(floor));
     if (this.owner.shadow) {
@@ -855,6 +970,31 @@ Game.Domain = class Domain {
       const glow = 0.1 + 0.04 * Math.sin(t * 3);
       ctx.fillStyle = 'rgba(255, 200, 120, ' + glow.toFixed(3) + ')';
       ctx.fillRect(r.x - 4, floor - 26, r.w + 8, 26);
+    } else if (fx === 'forest') {
+      // fachos de sol inclinados entre as copas, respirando devagar
+      for (let i = 0; i < 4; i++) {
+        const x0 = farX + 50 + i * 96 + Math.sin(t * 0.3 + i) * 6;
+        const a = 0.05 + 0.03 * Math.sin(t * 0.9 + i * 1.7);
+        ctx.fillStyle = 'rgba(255, 244, 180, ' + a.toFixed(3) + ')';
+        for (let y = floor - 168; y < floor; y += 2) {
+          const k = (y - (floor - 168)) / 168;
+          ctx.fillRect(Math.round(x0 + k * 60), y, Math.round(10 + k * 14), 2);
+        }
+      }
+      const glow = 0.05 + 0.02 * Math.sin(t * 1.3);
+      ctx.fillStyle = 'rgba(200, 255, 140, ' + glow.toFixed(3) + ')';
+      ctx.fillRect(r.x - 4, floor - 30, r.w + 8, 30);
+    } else if (fx === 'chess') {
+      // brilho rosa respirando sobre o tabuleiro e a casa do adversário marcada (Zugzwang chegando)
+      const glow = 0.06 + 0.03 * Math.sin(t * 1.6);
+      ctx.fillStyle = 'rgba(255, 143, 179, ' + glow.toFixed(3) + ')';
+      ctx.fillRect(r.x - 4, floor - 34, r.w + 8, 34);
+      const foe = this.foe;
+      const c = Game.config.zugzwang;
+      if (foe && !foe.ko && this.zug > c.still * 0.35 && (this.phase === 'active' || this.phase === 'reveal')) {
+        const k = Math.min(1, this.zug / c.still);
+        Game.drawSquare(ctx, Math.round(foe.cx), floor, 18, k, Math.floor(t * (8 + k * 16)) % 2);
+      }
     } else if (fx === 'quarry') {
       // clarão laranja da detonação no fundo
       if (this.flash > 0 && this.flashSpot) {
@@ -941,7 +1081,7 @@ Game.Domain = class Domain {
         const flip = Math.floor((this.clock + p.sway) * 3) % 2;
         ctx.fillStyle = p.color;
         ctx.fillRect(Math.round(p.x), Math.round(p.y), flip ? 2 : 1, flip ? 1 : 2);
-        ctx.fillStyle = '#8e1a32';
+        ctx.fillStyle = p.leaf ? '#2f6a2a' : '#8e1a32';
         ctx.fillRect(Math.round(p.x) + (flip ? 1 : 0), Math.round(p.y) + 1, 1, 1);
         continue;
       }
@@ -953,6 +1093,14 @@ Game.Domain = class Domain {
         ctx.fillStyle = p.color;
         ctx.fillRect(Math.round(p.x - sz / 2), Math.round(p.y - sz / 2), sz, sz);
         ctx.restore();
+        continue;
+      }
+      if (p.square) {
+        const sz = p.size;
+        ctx.fillStyle = '#ff8fb3';
+        ctx.fillRect(Math.round(p.x) - 1, Math.round(p.y) - 1, sz + 2, sz + 2);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(Math.round(p.x), Math.round(p.y), sz, sz);
         continue;
       }
       if (p.flashbulb) {

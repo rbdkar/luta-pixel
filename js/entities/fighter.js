@@ -68,6 +68,8 @@ Game.Fighter = class Fighter extends Game.Entity {
     this.slamDamage = 0;                  // dano ao despencar depois de flutuar
     this.lastSpecial = null;
     this.inverted = 0;                    // Fios Trocados: esquerda e direita trocadas (segundos)
+    this.armor = null;                    // Armadura de Carvalho Sagrado (forma de armadura): { hp, max, t, grow }
+    this.armorCd = 0;                     // espera para vestir de novo depois que quebra
     this.resetTimers();
     this.setCharacter(charKey || Game.characterOrder[0]);
   }
@@ -102,6 +104,20 @@ Game.Fighter = class Fighter extends Game.Entity {
       this.sheets[sheetKey] = new Game.SpriteSheet(Game.sprites[ch.sprite], image);
     }
     this.sheet = this.sheets[sheetKey];
+    // Armadura de Carvalho Sagrado: a mesma folha com o corpo virado casca (inteira, rachada, quase quebrando)
+    const sdef = Game.sprites[ch.sprite];
+    this.armorSheets = null;
+    this.armorAnimDef = null;
+    if (sdef.armorImages && !this.shadow) {
+      const key = ch.sprite + ':armor';
+      if (!this.sheets[key]) this.sheets[key] = sdef.armorImages.map((img) => new Game.SpriteSheet(sdef, Game.assets.get(img)));
+      this.armorSheets = this.sheets[key];
+      // a forma de armadura tem animações próprias (quadros da folha da armadura)
+      if (sdef.armorAnimations) {
+        if (!sdef._armorDef) sdef._armorDef = Object.assign({}, sdef, { animations: Object.assign({}, sdef.animations, sdef.armorAnimations) });
+        this.armorAnimDef = sdef._armorDef;
+      }
+    }
     this.anim = new Game.Animator(Game.sprites[ch.sprite]);
     this.attack = null;
     this.charging = null;
@@ -109,6 +125,24 @@ Game.Fighter = class Fighter extends Game.Entity {
     this.guardTimer = 0;
     this.state = 'idle';
     this.play('idle');
+  }
+
+  /**
+   * Troca a tabela de animações quando a forma de armadura entra ou sai (Ademoir): a mesma animação
+   * continua no quadro equivalente da outra folha.
+   */
+  syncForm() {
+    const want = this.armor && this.armorAnimDef ? this.armorAnimDef : Game.sprites[this.char.sprite];
+    if (this.anim.def === want) return;
+    const name = this.anim.name;
+    this.anim.def = want;
+    const a = name && want.animations[name];
+    if (!a) {
+      this.anim.name = null;
+      this.play('idle');
+      return;
+    }
+    this.anim.index = Math.min(this.anim.index, a.frames.length - 1);
   }
 
   /** Nome mostrado no HUD. */
@@ -119,7 +153,7 @@ Game.Fighter = class Fighter extends Game.Entity {
   /** Toca a animação de um papel (idle, hurt...) traduzida pelo personagem. */
   play(role, restart = false) {
     const name = this.char.anims[role] || role;
-    const anims = this.sheet.def.animations;
+    const anims = this.anim.def.animations;
     this.anim.play(anims[name] ? name : this.char.anims.idle, restart);
   }
 
@@ -189,6 +223,9 @@ Game.Fighter = class Fighter extends Game.Entity {
     this.slamDamage = 0;
     this.lastSpecial = null;
     this.inverted = 0;
+    this.armor = null;
+    this.armorCd = 0;
+    if (this.anim) this.syncForm();
     this.inDomain = false;
     this.speedMult = 1;
     this.resetTimers();
@@ -276,6 +313,15 @@ Game.Fighter = class Fighter extends Game.Entity {
     this.aura = Math.max(0, this.aura - dt);
     this.eyeFlash = Math.max(0, this.eyeFlash - dt);
     this.inverted = Math.max(0, this.inverted - dt);
+    this.armorCd = Math.max(0, this.armorCd - dt);
+    if (this.armor) {
+      const ar = this.armor;
+      ar.grow += dt;
+      // na Nova Floresta a forma não acaba pelo tempo e a casca se refaz aos poucos
+      if (this.inDomain && this.char.special2 === 'armor') ar.hp = Math.min(ar.max, ar.hp + Game.config.armor.forestRegen * dt);
+      else ar.t -= dt;
+      if (ar.t <= 0 || this.ko) this.breakArmor(scene, false);
+    }
     if (this.mode === 'fight') this.recordHistory(dt);
     if (this.state !== 'iced') this.freezeImmune = Math.max(0, this.freezeImmune - dt);
     if (this.rooted > 0) {
@@ -461,6 +507,10 @@ Game.Fighter = class Fighter extends Game.Entity {
       Game.events.emit('land', { target: this });
       return;
     }
+    if (this.attack && this.attack.knight && this.attack.knight.phase === 'drop') {
+      this.knightStomp(scene);
+      return;
+    }
     if (this.attack && this.attack.def.rise) {
       // gancho ascendente: cai e fica um instante aberto
       this.vx = 0;
@@ -553,11 +603,120 @@ Game.Fighter = class Fighter extends Game.Entity {
         if (Math.sign(e.vx) === Math.sign(this.cx - e.cx) && Math.abs(e.cx - this.cx) < 110) return true;
       } else if (e instanceof Game.Strike) {
         if (e.phase === 'warn' && Math.abs(e.cxPos - this.cx) < 42) return true;
+      } else if (Game.Pawn && e instanceof Game.Pawn) {
+        if (Math.abs(e.cx - this.cx) < (e.phase === 'queen' || e.phase === 'promote' ? 90 : 40)) return true;
       } else if (e.x !== undefined && e.w && Math.abs(e.x + e.w / 2 - this.cx) < 110 && !(e instanceof Game.Fighter)) {
         if (e instanceof Game.TorchFlame || e instanceof Game.CrowFlock || e instanceof Game.Beam || e instanceof Game.BlizzardWave) return true;
       }
     }
     return false;
+  }
+
+  /**
+   * Salto do Cavalo (Dama): escolhe a casa. Para a frente, pousa atrás do adversário se ele estiver
+   * ao alcance (o cavalo pula por cima das peças); segurando para trás, salta três casas para trás.
+   */
+  planKnight(scene) {
+    const c = Game.config.knight;
+    const map = scene.map ? scene.map.pixelWidth : 9999;
+    const inp = this.lastInput;
+    const back = !!(inp && inp.axisX() === -this.facing);
+    const o = this.opponent;
+    let tx;
+    if (back) tx = this.cx - this.facing * c.back;
+    else if (o && !o.ko && !o.hidden && Math.abs(o.cx - this.cx) <= c.range) tx = o.cx + this.dirTo(o) * c.behind;
+    else tx = this.cx + this.facing * c.range * 0.55;
+    tx = Math.max(14, Math.min(map - 14, tx));
+    return { phase: 'crouch', t: 0, tx, y0: this.feet, floor: this.groundY !== undefined ? this.groundY : this.feet, back, missed: false };
+  }
+
+  /**
+   * Salto do Cavalo: o L — agacha, sobe reto duas casas, atravessa por cima e desce pisando na casa
+   * marcada. Retorna a escala da gravidade, ou null se não estiver saltando.
+   */
+  handleKnight(dt) {
+    const a = this.attack;
+    const k = a && a.knight;
+    if (!k) return null;
+    const c = Game.config.knight;
+    k.t += dt;
+    // no ar o cavalo pula por cima de tudo: não leva golpe (o pisão é que pode ser defendido)
+    if (k.phase === 'rise' || k.phase === 'cross' || k.phase === 'drop') this.invuln = Math.max(this.invuln, 0.05);
+    if (k.phase === 'crouch') {
+      this.vx = 0;
+      if (k.t >= c.crouch) {
+        k.phase = 'rise';
+        k.t = 0;
+        this.onGround = false;
+        this.vy = -c.riseSpeed;
+        Game.events.emit('knightJump', { fighter: this });
+      }
+      return 1;
+    }
+    if (k.phase === 'rise') {
+      // a perna comprida do L: sobe reto
+      this.vx = 0;
+      this.vy = -c.riseSpeed;
+      if (this.feet <= k.y0 - c.height || k.t > 0.25) {
+        k.phase = 'cross';
+        k.t = 0;
+        this.vy = 0;
+      }
+      return 0;
+    }
+    if (k.phase === 'cross') {
+      // o pé do L: atravessa reto por cima até a casa marcada
+      this.vy = 0;
+      const dx = k.tx - this.cx;
+      const step = c.crossSpeed * dt;
+      if (Math.abs(dx) <= step || k.t > 0.6) {
+        if (Math.abs(dx) <= step) this.x += dx;
+        this.vx = 0;
+        k.phase = 'drop';
+        k.t = 0;
+        this.anim.play('knightDrop', true);
+        const o = this.opponent;
+        if (o && !o.ko && !k.back) this.facing = this.dirTo(o); // vira para o adversário antes de pisar
+      } else {
+        this.vx = Math.sign(dx) * c.crossSpeed;
+      }
+      return 0;
+    }
+    if (k.phase === 'drop') {
+      this.vx = 0;
+      this.vy = c.dropSpeed;
+      return 0;
+    }
+    // pousou: segura o pisão até a animação acabar
+    this.vx = 0;
+    if (this.anim.finished) {
+      this.attack = null;
+      if (this.mode === 'fight' && k.missed && !k.back) this.enterRecover(c.whiff);
+      else this.enterIdle();
+    }
+    return 1;
+  }
+
+  /** O pisão do cavalo ao pousar na casa: acerta dos dois lados (golpe de cima: defende em pé). */
+  knightStomp(scene) {
+    const k = this.attack.knight;
+    const c = Game.config.knight;
+    k.phase = 'land';
+    k.t = 0;
+    this.vx = 0;
+    this.anim.play('knightLand', true);
+    const o = this.opponent;
+    if (o && !o.ko) this.facing = this.dirTo(o);
+    scene.effects.shake(0.1, 2);
+    Game.chessBurst(scene, this.cx, this.feet - 2, 8, Game.chessPalette(this));
+    if (k.back) {
+      Game.events.emit('knightLand', { fighter: this, result: false });
+      return;
+    }
+    const res = scene.punch({ x: this.cx - 22, y: this.feet - 18, w: 44, h: 18 }, Object.assign({}, c.stomp), this);
+    k.missed = !res;
+    if (res === 'hit') this.attack.landed = true;
+    Game.events.emit('knightLand', { fighter: this, result: res });
   }
 
   /** Mergulho (Gélida): desce em linha reta até o chão. Retorna a escala da gravidade. */
@@ -595,6 +754,8 @@ Game.Fighter = class Fighter extends Game.Entity {
 
   movePlatform(dt, inp) {
     const c = this.cfg;
+    const knight = this.handleKnight(dt);
+    if (knight !== null) return knight;
     if (this.handleRise()) return 1;
     const dive = this.handleDive();
     if (dive !== null) return dive;
@@ -630,6 +791,8 @@ Game.Fighter = class Fighter extends Game.Entity {
 
   moveFight(dt, inp) {
     const fc = this.fc;
+    const knight = this.handleKnight(dt);
+    if (knight !== null) return knight;
     if (this.handleRise()) return 1;
     const dive = this.handleDive();
     if (dive !== null) return dive;
@@ -763,7 +926,7 @@ Game.Fighter = class Fighter extends Game.Entity {
       }
     };
     // ↓ + soco no chão: golpe baixo (rasteira), que só se defende agachado
-    const low = this.mode === 'fight' && this.onGround && inp.isHeld('down') && !!this.sheet.def.animations.sweep;
+    const low = this.mode === 'fight' && this.onGround && inp.isHeld('down') && !!this.anim.def.animations.sweep;
     if (!this.attack) {
       if (this.state === 'dash') {
         if (this.stateTime < 0.05) return; // logo no começo do dash ainda não
@@ -830,6 +993,10 @@ Game.Fighter = class Fighter extends Game.Entity {
     if (this.mode === 'fight' && !this.inDomain && kind === 'bomb' && mine(Game.Bomb, (e) => !e.mini)) return false;
     if (kind === 'thread' && mine(Game.Thread)) return false;
     if (kind === 'timebomb' && mine(Game.TimeBomb)) return false;
+    if (this.mode === 'fight' && !this.inDomain && kind === 'root' && mine(Game.CutRoot)) return false;
+    // um peão por vez (no Tabuleiro Infinito, até três)
+    if (kind === 'pawn' && scene.entities.filter((e) => e instanceof Game.Pawn && e.owner === this && !e.dead).length >= (this.inDomain ? 3 : 1)) return false;
+    if (kind === 'armor' && (this.armor || this.armorCd > 0)) return false;
     if (kind === 'rewind' && this.mode !== 'fight') return false;
     const cancel = !!(this.attack && this.attack.landed); // cancelou um golpe que acertou
     if (this.state === 'dash') this.state = 'idle';
@@ -957,9 +1124,80 @@ Game.Fighter = class Fighter extends Game.Entity {
         this.startAttack('plant');
         this.specialCooldown = cfg.timebomb.cooldown * (dom ? 0.6 : 1);
         return true;
+      case 'root':
+        this.startAttack('rootCast');
+        this.specialCooldown = cfg.root.cooldown * (dom ? 0.6 : 1);
+        Game.events.emit('rootCast', { fighter: this });
+        return true;
+      case 'armor':
+        this.startAttack('armorCast');
+        this.specialCooldown = 0.5;
+        return true;
+      case 'pawn':
+        this.startAttack('pawnCast');
+        this.specialCooldown = cfg.pawn.cooldown * (dom ? 0.5 : 1);
+        return true;
+      case 'knight':
+        this.startAttack('knightJump');
+        this.attack.knight = this.planKnight(scene);
+        scene.add(new Game.KnightMark(this, this.attack.knight));
+        this.specialCooldown = dom ? cfg.knight.domainCooldown : cfg.knight.cooldown;
+        return true;
       default:
         return false;
     }
+  }
+
+  // ------------------------------------------------------------------ Armadura de Carvalho Sagrado
+  /**
+   * Forma de Armadura de Carvalho Sagrado: o cajado se junta ao corpo e vira a armadura (o corpo todo,
+   * maior e sem o cajado). Na forma ele toma menos dano e bate mais forte; a casca aguenta um tanto de
+   * dano e quebra. quiet: sem anúncio (a Nova Floresta refazendo a casca).
+   */
+  putArmor(scene, quiet = false) {
+    const c = Game.config.armor;
+    const fresh = !this.armor;
+    this.armor = { hp: c.toughness, max: c.toughness, t: c.time, grow: fresh ? 0 : 1 };
+    this.syncForm();
+    // terminou a transformação: na folha da armadura ele pousa firme
+    if (this.anim.name === 'armorCast' && this.armorAnimDef) {
+      this.anim.index = 0;
+      this.anim.time = 0;
+      this.anim.finished = false;
+    }
+    if (scene) {
+      // o cajado se desfaz em lascas que grudam no corpo
+      Game.barkBurst(scene, this.cx + this.facing * 12, this.feet - 22, 8);
+      Game.barkBurst(scene, this.cx, this.feet - 14, 10);
+      if (Game.leafBurst) Game.leafBurst(scene, this.cx, this.feet - 30, 4);
+    }
+    if (!quiet) Game.events.emit('armorUp', { fighter: this });
+  }
+
+  /** Um golpe na forma de armadura: o dano já veio reduzido; a casca racha e, sem resistência, quebra. */
+  armorStrain(raw, scene, dir) {
+    const ar = this.armor;
+    ar.hp -= raw;
+    Game.barkBurst(scene, this.cx - dir * 3, this.y + this.h * 0.45, 5);
+    Game.events.emit('armorHit', { fighter: this, left: Math.max(0, ar.hp) / ar.max });
+    if (ar.hp <= 0) this.breakArmor(scene, true);
+  }
+
+  /** Nível de rachadura da armadura para o desenho: 2 inteira, 1 rachada, 0 quase quebrando. */
+  get armorLevel() {
+    const ar = this.armor;
+    if (!ar) return 2;
+    const f = ar.hp / ar.max;
+    return f > 0.66 ? 2 : f > 0.33 ? 1 : 0;
+  }
+
+  breakArmor(scene, loud) {
+    if (!this.armor) return;
+    this.armor = null;
+    this.syncForm(); // o cajado volta: animações da forma normal
+    this.armorCd = Game.config.armor.cooldown;
+    if (scene) Game.barkBurst(scene, this.cx, this.feet - 16, loud ? 16 : 8, loud);
+    Game.events.emit(loud ? 'armorBreak' : 'armorFade', { fighter: this });
   }
 
   /** Corvo: o olho rubro copia o especial que acabou de ver. */
@@ -1012,7 +1250,7 @@ Game.Fighter = class Fighter extends Game.Entity {
   }
 
   handPoint() {
-    const fire = this.sheet.def.animations.fire;
+    const fire = this.anim.def.animations.fire;
     const muzzle = fire ? fire.muzzle : { x: 12, y: -18 };
     return { x: this.cx + this.facing * (muzzle.x - 4), y: this.feet + muzzle.y + 1 };
   }
@@ -1028,7 +1266,8 @@ Game.Fighter = class Fighter extends Game.Entity {
   }
 
   startAttack(kind) {
-    const def = this.sheet.def.animations[kind];
+    // na forma de armadura (Ademoir) os golpes vêm da tabela da armadura (manoplas, sem o cajado)
+    const def = this.anim.def.animations[kind];
     if (!def) throw new Error('Golpe "' + kind + '" não existe nas animações do personagem.');
     this.attack = { kind, def, hitDone: !def.hit, hitSet: new Set(), landed: false, released: false, air: false, risen: false };
     this.punchBufferTimer = 0;
@@ -1065,7 +1304,7 @@ Game.Fighter = class Fighter extends Game.Entity {
       this.doRewind(scene);
     }
     // o gancho ascendente só termina ao pousar
-    if (this.anim.finished && this.attack === a && !(a.def.rise && !this.onGround)) {
+    if (this.anim.finished && this.attack === a && !(a.def.rise && !this.onGround) && !a.knight) {
       this.attack = null;
       this.comboTimer = this.cfg.comboWindow;
       if (this.mode === 'fight' && this.onGround && this.canAct()) this.state = 'idle';
@@ -1154,6 +1393,24 @@ Game.Fighter = class Fighter extends Game.Entity {
     }
     if (a.def.plant) {
       this.plantBomb(scene);
+      return;
+    }
+    if (a.def.pawn) {
+      // o peão é cravado no chão à frente e começa a marchar
+      const m = a.def.muzzle || { x: 18, y: 0 };
+      const x = Math.max(10, Math.min(map - 10, this.cx + this.facing * m.x));
+      scene.add(new Game.Pawn(this, x, this.facing));
+      Game.events.emit('pawnPlace', { fighter: this });
+      return;
+    }
+    if (a.def.root) {
+      // a raiz sai da ponta do cajado e corre por baixo da terra
+      const x = Math.max(4, Math.min(map - 4, this.cx + this.facing * 26));
+      scene.add(new Game.CutRoot(this, x, this.facing));
+      return;
+    }
+    if (a.def.armor) {
+      this.putArmor(scene);
       return;
     }
     if (a.def.gate) {
@@ -1475,6 +1732,7 @@ Game.Fighter = class Fighter extends Game.Entity {
   toss(scene) {
     const d = this.throwData;
     const o = d.target;
+    if (this.char.castle) return this.castle(scene);
     const dir = d.back ? -this.facing : this.facing; // para onde o adversário voa
     if (d.back) {
       const maxX = scene.map.pixelWidth - o.w;
@@ -1495,6 +1753,38 @@ Game.Fighter = class Fighter extends Game.Entity {
     o.addMeter(hit.damage * this.fc.meter.taken);
     Game.events.emit('hit', { heavy: true, target: o, attacker: this, combo: 1 });
     Game.events.emit('toss', { attacker: this, target: o });
+  }
+
+  /**
+   * Roque (Dama): como o rei e a torre, ela troca de lugar com o adversário e uma torre cai em cima
+   * dele, que voa para o lado de onde ela veio (← ou → no agarrão não muda: o Roque sempre troca).
+   */
+  castle(scene) {
+    const d = this.throwData;
+    const o = d.target;
+    const maxX = scene.map.pixelWidth;
+    const mine = this.cx;
+    const theirs = o.cx;
+    this.x = Math.max(0, Math.min(maxX - this.w, theirs - this.w / 2));
+    o.x = Math.max(0, Math.min(maxX - o.w, mine - o.w / 2));
+    this.savePrev();
+    o.savePrev();
+    this.facing = o.cx >= this.cx ? 1 : -1;
+    const dir = this.facing; // o adversário voa para longe dela
+    o.grabbedBy = null;
+    o.state = 'hurt';
+    d.phase = 'toss';
+    d.t = 0;
+    this.anim.play('grab', true);
+    this.anim.index = 1;
+    const hit = { damage: this.fc.grab.damage, knockback: 150, heavy: true, launch: true, throw: true };
+    scene.add(new Game.RookSlam(this, o.cx));
+    o.receiveThrow(hit, this, -dir, scene);
+    scene.effects.freeze(Game.config.fight.hitStop.heavy);
+    this.addMeter(hit.damage * this.fc.meter.dealt);
+    o.addMeter(hit.damage * this.fc.meter.taken);
+    Game.events.emit('hit', { heavy: true, target: o, attacker: this, combo: 1 });
+    Game.events.emit('toss', { attacker: this, target: o, castle: true });
   }
 
   /** Dano do arremesso: não dá para defender. attackerSide: lado de onde veio o golpe. */
@@ -1523,8 +1813,9 @@ Game.Fighter = class Fighter extends Game.Entity {
     if (!['idle', 'walk', 'crouch', 'block'].includes(this.state) || this.attack || this.charging) return false;
     if (this.lastInput.axisX() !== -attackerDir) return false;
     const crouched = this.lastInput.isHeld('down');
-    // golpe baixo (rasteira) só se defende agachado
+    // golpe baixo (rasteira) só se defende agachado; golpe que desce de cima, só em pé
     if (hit && hit.low && !crouched) return false;
+    if (hit && hit.high && crouched) return false;
     const overhead = from instanceof Game.Fighter && !from.onGround;
     return !(overhead && crouched);
   }
@@ -1559,6 +1850,19 @@ Game.Fighter = class Fighter extends Game.Entity {
       this.pushAttacker(from, dir, scene, fc.pushback.block);
       return 'blocked';
     }
+    // Armadura de Carvalho Sagrado: a transformação não é interrompida (as raízes que sobem pelo corpo
+    // já seguram o golpe, com a defesa da armadura); agarrão, super e acerto garantido passam direto
+    if (a0 && a0.kind === 'armorCast' && !a0.released && this.mode === 'fight'
+        && !hit.throw && !hit.super && !hit.sure && !hit.timeDebt) {
+      const dmg = Math.max(1, Math.round(hit.damage * Game.config.armor.defense));
+      if (this.hp - dmg > 0 || this.noKo) {
+        this.hp = Math.max(1, this.hp - dmg);
+        this.flash = 0.06;
+        Game.barkBurst(scene, this.cx - dir * 3, this.y + this.h * 0.45, 5);
+        Game.events.emit('armorHit', { fighter: this, left: 1 });
+        return 'hit';
+      }
+    }
     const prev = this.state;
     // contra-golpe: acertado bem no começo do próprio golpe (ou carregando a bola)
     const punish = this.mode === 'fight' && !hit.super && !hit.sure && !hit.echo && !hit.throw && !hit.timeDebt
@@ -1582,6 +1886,12 @@ Game.Fighter = class Fighter extends Game.Entity {
       damage += this.fc.freeze.shatterBonus;
       this.shatterIce(scene, true);
     }
+    // Armadura de Carvalho Sagrado: a casca segura parte do golpe (e racha com ele)
+    let strained = 0;
+    if (this.armor && this.mode === 'fight' && !hit.timeDebt) {
+      strained = damage;
+      damage = Math.max(1, Math.round(damage * Game.config.armor.defense));
+    }
     if (hit.burn && this.mode === 'fight') this.burn = { t: hit.burn, tick: 0.4 };
     if (hit.root && this.mode === 'fight') {
       this.rooted = Math.max(this.rooted, hit.root);
@@ -1594,6 +1904,7 @@ Game.Fighter = class Fighter extends Game.Entity {
     if (scene.chaos && scene.chaos.vampire && thief instanceof Game.Fighter && thief !== this && !thief.ko) {
       thief.hp = Math.min(thief.maxHp, thief.hp + (before - this.hp) * scene.chaos.vampire); // Caos: vampiro
     }
+    if (strained && this.armor) this.armorStrain(strained, scene, dir);
     this.flash = 0.06;
     this.facing = dir;
     this.attack = null;
@@ -1603,6 +1914,7 @@ Game.Fighter = class Fighter extends Game.Entity {
     if (this.hp <= 0) {
       this.ko = true;
       this.inverted = 0;
+      if (this.armor) this.breakArmor(scene, true);
       this.launch(dir, 1.15, scene);
       Game.events.emit('ko', { loser: this, attacker: from });
       return true;
@@ -1859,7 +2171,7 @@ Game.Fighter = class Fighter extends Game.Entity {
     if (this.aura > 0 || this.inDomain) this.drawAura(ctx, x, y);
     const moon = this.char.moon && !this.ko ? this.moonPos(p) : null;
     if (moon && moon.back) this.drawMoon(ctx, moon);
-    this.sheet.draw(ctx, this.anim.frame, x, y, this.facing < 0, this.flash > 0);
+    this.drawBody(ctx, x, y);
     if (moon && !moon.back) this.drawMoon(ctx, moon);
     if (this.eyeFlash > 0 && def.eye && !Game.REACT_STATES.has(this.state)) this.drawEyeFlare(ctx, p, def.eye);
     if (this.state === 'iced') this.drawIce(ctx, p);
@@ -1879,7 +2191,7 @@ Game.Fighter = class Fighter extends Game.Entity {
     if (this.state === 'dizzy') {
       // estrelinhas girando sobre a cabeça
       const cx = Math.round(p.x + this.w / 2);
-      const top = Math.round(p.y + this.h - def.anchor.y + (def.headY || 4));
+      const top = Math.round(p.y + this.h - def.anchor.y + ((this.armor && def.armorHeadY) || def.headY || 4));
       for (let i = 0; i < 3; i++) {
         const ang = this.clock * 5 + i * 2.09;
         const sx = Math.round(cx + Math.cos(ang) * 8);
@@ -1889,6 +2201,30 @@ Game.Fighter = class Fighter extends Game.Entity {
         ctx.fillRect(sx, sy - 1, 1, 3);
       }
     }
+  }
+
+  /** O corpo; na forma de Armadura de Carvalho, a folha da armadura (a transformação é animada na folha base). */
+  drawBody(ctx, x, y) {
+    const frame = this.anim.frame;
+    const flip = this.facing < 0;
+    const flash = this.flash > 0;
+    const ar = this.armor;
+    if (!ar) {
+      this.sheet.draw(ctx, frame, x, y, flip, flash);
+      return;
+    }
+    // a armadura acabando pisca (fica meio transparente a cada piscada)
+    const ending = !this.inDomain && ar.t < 1 && Math.floor(this.clock * 12) % 2 === 0;
+    if (ending) ctx.globalAlpha *= 0.55;
+    if (this.armorSheets && this.armorAnimDef) {
+      this.armorSheets[this.armorLevel].draw(ctx, frame, x, y, flip, flash);
+    } else {
+      // quem copiou (Corvo) ou a Sombra: casca pintada por cima do próprio corpo, subindo quando nasce
+      const grow = Math.min(1, ar.grow / 0.28);
+      this.sheet.draw(ctx, frame, x, y, flip, flash);
+      if (!flash) Game.drawTintedFrame(ctx, this.sheet, '#7d532f', frame, x, y, flip, 0.5 * grow * (this.armorLevel >= 1 ? 1 : 0.7));
+    }
+    if (ending) ctx.globalAlpha /= 0.55;
   }
 
   /** Controles trocados: duas setas em sentidos opostos piscando em cima da cabeça. */

@@ -103,18 +103,18 @@ Game.CpuController = class CpuController {
 
   /** Alcance do primeiro golpe do combo (centro a centro), com folga. */
   reachOf(me) {
-    const first = me.sheet.def.animations[me.char.combo[0]];
+    const first = me.anim.def.animations[me.char.combo[0]];
     const h = first && first.hit;
     return h ? h.x + h.w + me.w / 2 - 1 : 22;
   }
 
   hasSweep(me) {
-    return !!me.sheet.def.animations.sweep;
+    return !!me.anim.def.animations.sweep;
   }
 
   /** Alcance da rasteira (centro a centro). */
   sweepReach(me) {
-    const h = me.sheet.def.animations.sweep.hit;
+    const h = me.anim.def.animations.sweep.hit;
     return h.x + h.w + me.w / 2 - 2;
   }
 
@@ -254,6 +254,28 @@ Game.CpuController = class CpuController {
       if (this.chance(p.block + 0.1)) this.later(p.react * (0.6 + Math.random() * 0.8), () => this.dodge(e, me, opp));
     }
 
+    // Raiz de Corte vindo por baixo da terra: pula por cima (ou se prepara para defender as duas curvas)
+    for (const e of scene.entities) {
+      if (!(e instanceof Game.CutRoot) || e.owner !== opp || e.phase !== 'travel' || this.reacted.has(e)) continue;
+      const gap = (me.cx - e.tip) * e.facing;
+      if (gap < 30 || gap > 95) continue;
+      this.reacted.add(e);
+      if (!this.chance(p.block * 0.8)) continue;
+      this.later(p.react * 0.6, () => {
+        if (!me.canAct() || !me.onGround) return;
+        if (this.chance(0.6)) {
+          this.held.down = false;
+          this.setDir(-me.dirTo(opp));
+          this.press('jump');
+          this.plan = { type: 'air', t: 0.6 };
+        } else {
+          // agacha para a 1ª curva e levanta para a 2ª
+          this.plan = { type: 'guard', t: 0.28, crouch: true };
+          this.later(0.3, () => { this.plan = { type: 'guard', t: 0.3, crouch: false }; });
+        }
+      });
+    }
+
     // Espetáculo da Marionete: a cruz desce em cima de mim — sai de baixo antes dos fios chegarem
     for (const e of scene.entities) {
       if (!(e instanceof Game.PuppetShow) || e.target !== me || e.phase !== 'warn' || this.reacted.has(e)) continue;
@@ -348,6 +370,13 @@ Game.CpuController = class CpuController {
     const duckable = proj.y + proj.h <= me.feet - Game.config.fight.crouchHeight - 0.5;
     const gap = Math.abs(proj.cx - me.cx);
     const r = Math.random();
+    // Dama: o Salto do Cavalo passa por cima do projétil (no ar ela não leva golpe) e pisa em quem atirou
+    const far = Math.abs(opp.cx - me.cx);
+    if (me.char.special2 === 'knight' && me.specialCooldown <= 0 && gap > 30 && far < Game.config.knight.range && r < 0.3) {
+      this.special2();
+      this.plan = { type: 'wait', t: 0.5 };
+      return;
+    }
     if (duckable && r < 0.4) {
       this.plan = { type: 'guard', t: 0.55, crouch: true };
     } else if (r < 0.7 && gap > 34 && gap < 130) {
@@ -422,7 +451,7 @@ Game.CpuController = class CpuController {
     const saving = this.saving(me, opp); // juntando para o domínio: quase não gasta no super
     if (me.superReady && this.chance((0.25 + p.special) * (saving ? 0.02 : 1)) && this.useSuper(me, opp, dist, false)) return;
     // colado em quem só defende: agarrão (para frente ou para trás)
-    const turtle = this.oppBlocked > 1; // adversário defendendo muito: hora de agarrar
+    const turtle = this.oppBlocked > 1; // defendendo muito: hora de agarrar
     if (dist < this.reachOf(me) + 10 && opp.onGround && this.chance(p.aggro * (turtle ? 0.6 : 0.25))) {
       this.oppBlocked = 0;
       // chega bem perto e agarra (70% para frente, 30% jogando para trás)
@@ -575,6 +604,10 @@ Game.CpuController = class CpuController {
       else if (k === 'tangle') ok = dist < Game.config.tangle.range + 4 && opp.inverted <= 0 && r < p.special * 1.2;
       else if (k === 'bomb') ok = dist > 70 && dist < 200 && !mine(Game.Bomb) && r < p.special * 1.6;
       else if (k === 'timebomb') ok = dist < Game.config.timebomb.reach + 10 && !mine(Game.TimeBomb) && r < p.special * 1.4;
+      else if (k === 'root') ok = dist > 50 && dist < Game.config.root.range && opp.onGround && !mine(Game.CutRoot) && r < p.special * 1.6;
+      else if (k === 'armor') ok = !me.armor && me.armorCd <= 0 && dist < 90 && r < p.special * 1.2;
+      else if (k === 'pawn') ok = dist > 40 && dist < 200 && !mine(Game.Pawn) && r < p.special * 1.6;
+      else if (k === 'knight') ok = dist > 36 && dist < Game.config.knight.range - 8 && opp.onGround && r < p.special * 1.1;
       if (ok && k === 'thread' && mine(Game.PuppetString)) this.later(0.22, () => this.press('punch'));
       return ok ? go(false) : false;
     }
@@ -608,6 +641,41 @@ Game.CpuController = class CpuController {
         this.held.down = false;
         this.press('special');
         this.plan = { type: 'hold', dir: closing > 50 && dist > 110 && dist < 170 ? -me.dirTo(opp) : 0, t: 0.3 };
+        return true;
+      }
+      return false;
+    }
+    if (ch.special === 'root') {
+      // Ademoir: veste a armadura quando o outro chega perto (e entra batendo, que ela aguenta);
+      // de meia distância solta a Raiz de Corte
+      if (me.specialCooldown <= 0 && ch.special2 === 'armor' && !me.armor && me.armorCd <= 0 && dist < 80
+          && (opp.attack || dist < 46 || this.hurtRecently(me)) && r < p.special * 2.2) return go(true, 0.3);
+      if (me.armor && dist < 70 && this.chance(0.5 + p.aggro * 0.4)) {
+        this.plan = { type: 'pressure', t: 0.6 };
+        return true;
+      }
+      if (ready && dist > 52 && dist < Game.config.root.range && opp.onGround && (me.inDomain || !mine(Game.CutRoot))
+          && r < p.special * 1.9) return go(false, 0.35);
+      return false;
+    }
+    if (ch.special === 'pawn') {
+      // Dama: põe o peão de meia distância (ele empurra o adversário para perto) e salta de cavalo
+      // por cima de quem fica parado, defendendo ou atirando de longe; apanhando, salta para trás
+      const pawns = scene.entities.filter((e) => e instanceof Game.Pawn && e.owner === me && !e.dead).length;
+      if (me.specialCooldown <= 0 && ch.special2 === 'knight' && this.hurtRecently(me) && dist < 50 && r < p.special * 1.5) {
+        this.restAfterSpecial();
+        this.held.special = false;
+        this.setDir(-me.dirTo(opp));
+        this.special2();
+        this.plan = { type: 'hold', dir: -me.dirTo(opp), t: 0.2 };
+        return true;
+      }
+      if (ready && ch.special2 === 'knight' && opp.onGround && dist > 34 && dist < Game.config.knight.range - 8
+          && (opp.state === 'block' || opp.state === 'crouch' || !opp.attack || pawns > 0) && r < p.special * 1.25) return go(true, 0.4);
+      if (ready && dist > 40 && dist < 210 && pawns < (me.inDomain ? 3 : 1) && r < p.special * 1.9) {
+        go(false, 0.3);
+        // o peão abre caminho: ela avança atrás dele
+        if (this.chance(0.4 + p.aggro * 0.4)) this.plan = { type: 'approach', until: this.reachOf(me), t: 0.7 };
         return true;
       }
       return false;
@@ -669,6 +737,8 @@ Game.CpuController = class CpuController {
     else if (kind === 'supernova') good = oppGround && dist > 24;
     else if (kind === 'show') good = oppGround && dist < 220;             // a cruz cai em cima de onde ele estiver
     else if (kind === 'barrel') good = oppGround && dist > 36 && dist < 240; // o barril rola pelo chão
+    else if (kind === 'oak') good = oppGround && dist < 80;                 // a investida do cajado precisa encostar
+    else if (kind === 'checkmate') good = oppGround && dist < 200;          // a fileira de casas corre pelo chão
     if (!good) return false;
     this.held.down = false;
     this.setDir(0);
